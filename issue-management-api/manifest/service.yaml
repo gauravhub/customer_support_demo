@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: issue-management-api
+  namespace: default
+  labels:
+    app: issue-management-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: issue-management-api

@@ -1,0 +1,95 @@
+{
+    "product_id": "SRV-0005",
+    "sku": "CIRRUS-BLADE-X8-05",
+    "brand": "Cirrus Dataplane",
+    "model": "Blade X8",
+    "form_factor": "blade",
+    "use_cases": [
+        "dense compute",
+        "private cloud",
+        "hpc (cpu)",
+        "multi-tenant"
+    ],
+    "description": "Cirrus Blade X8 is a compute blade aimed at high-density datacenters where power, cabling, and management must be centralized. It pairs dual-socket CPU performance with shared chassis I/O modules, enabling rapid scaling for private cloud and compute farms. The blade is well-suited for multi-tenant environments because its management and firmware governance features support consistent baselines across large fleets. It is optimized for CPU-heavy workloads where GPU acceleration is not a primary requirement.",
+    "specifications": {
+        "cpu": {
+            "socket_count": 2,
+            "supported_families": [
+                "AMD EPYC 9004"
+            ],
+            "configured_model": "AMD EPYC 9354",
+            "cores_threads": "32C/64T",
+            "base_boost_ghz": "3.25 / 3.8",
+            "tdp_w": 280
+        },
+        "memory": {
+            "type": "DDR5 ECC RDIMM",
+            "slots": 24,
+            "max_gb": 6144,
+            "configured_gb": 2048,
+            "speed_mts": 4800
+        },
+        "storage": {
+            "front_bays": "2x E1.S NVMe (blade internal)",
+            "configured_drives": [
+                {
+                    "type": "NVMe SSD",
+                    "capacity_tb": 1.92,
+                    "count": 2,
+                    "raid": "RAID1"
+                }
+            ],
+            "internal_boot": "Network boot (PXE/iSCSI) or mirrored E1.S",
+            "max_raw_tb": 7.68,
+            "controllers": [
+                "NVMe RAID (software)"
+            ]
+        },
+        "networking": {
+            "onboard": "Chassis I/O mezzanine (no fixed ports on blade face)",
+            "optional": [
+                "Dual 25GbE mezzanine",
+                "Dual 100GbE mezzanine"
+            ],
+            "configured": "Dual 100GbE mezzanine"
+        },
+        "expansion": {
+            "pcie_slots": [
+                "Mezzanine expansion (PCIe 5.0 equivalent lanes via chassis midplane)"
+            ],
+            "gpu_support": "No local GPU; chassis-level GPU pooling supported in compatible enclosures"
+        },
+        "power_cooling": {
+            "psu": "Provided by chassis (N+N redundant)",
+            "redundant_psu_supported": true,
+            "cooling": "Chassis-managed cooling zones"
+        },
+        "management": {
+            "bmc": "Cirrus Chassis Manager",
+            "features": [
+                "role-based access",
+                "firmware baselines",
+                "tenant isolation",
+                "Redfish proxy"
+            ]
+        },
+        "dimensions_weight": {
+            "notes": "Blade dimensions depend on chassis; typical half-height blade."
+        },
+        "os_compatibility": [
+            "Ubuntu Server LTS",
+            "RHEL",
+            "SLES",
+            "VMware ESXi",
+            "OpenStack/KVM stacks"
+        ],
+        "warranty": "3-year blade, chassis sold separately"
+    },
+    "tags": [
+        "blade",
+        "dense-compute",
+        "ddr5",
+        "100gbe",
+        "fleet-management"
+    ]
+}

@@ -1,0 +1,12 @@
+apiVersion: eks.amazonaws.com/v1
+kind: IngressClassParams
+metadata:
+  name: alb
+spec:
+  scheme: internet-facing
+  # No certificate needed - using HTTP on ALB
+  # CloudFront in front of ALB will handle HTTPS with default *.cloudfront.net certificate
+  # Optional: Custom tags for AWS resources
+  # tags:
+  #   Environment: production
+  #   Application: customer-support-demo

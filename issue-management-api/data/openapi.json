@@ -1,0 +1,277 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Issue Management API",
+        "description": "REST API for managing JIRA issues",
+        "version": "0.1.0"
+    },
+    "servers": [
+        {
+            "url": "https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/issue-management",
+            "description": "Issue Management API Server (CloudFront HTTPS endpoint)"
+        }
+    ],
+    "paths": {
+        "/api/issue/{issue_key}": {
+            "get": {
+                "summary": "Get Issue",
+                "description": "Get issue information by issue key.\n\nArgs:\n    issue_key: JIRA issue key (e.g., \"AS-5\", \"PROJ-123\")\n\nReturns:\n    Dictionary with issue information if found, empty dict if not found.\n    Contains: key, summary, description, status, assignee, reporter, etc.",
+                "operationId": "get_issue_api_issue__issue_key__get",
+                "parameters": [
+                    {
+                        "name": "issue_key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "JIRA issue key (e.g., \"AS-5\", \"PROJ-123\")",
+                            "title": "Issue Key"
+                        },
+                        "description": "JIRA issue key"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/issue/{issue_key}/field": {
+            "get": {
+                "summary": "Get Issue Field",
+                "description": "Get a specific field value from an issue.\n\nArgs:\n    issue_key: JIRA issue key (e.g., \"AS-5\")\n    field_name: Field name to retrieve (e.g., \"reporter\", \"customfield_10071\")\n\nReturns:\n    Dictionary with field value if found, empty dict if not found.",
+                "operationId": "get_issue_field_api_issue__issue_key__field_get",
+                "parameters": [
+                    {
+                        "name": "issue_key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "JIRA issue key (e.g., \"AS-5\")",
+                            "title": "Issue Key"
+                        },
+                        "description": "JIRA issue key"
+                    },
+                    {
+                        "name": "field_name",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "Field name (e.g., 'reporter', 'customfield_10071')",
+                            "title": "Field Name"
+                        },
+                        "description": "Field name to retrieve"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "summary": "Update Issue Field",
+                "description": "Update a field value in an issue.\n\nArgs:\n    issue_key: JIRA issue key (e.g., \"AS-5\")\n    request: Request body with field_name and value\n\nReturns:\n    Dictionary with success status\n\nNote:\n    To assign an issue, use field_name=\"assignee\" with the assignee email/username as value.",
+                "operationId": "update_issue_field_api_issue__issue_key__field_put",
+                "parameters": [
+                    {
+                        "name": "issue_key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "JIRA issue key (e.g., \"AS-5\")",
+                            "title": "Issue Key"
+                        },
+                        "description": "JIRA issue key"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateFieldRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/issue/{issue_key}/attachments": {
+            "get": {
+                "summary": "Get Issue Attachments",
+                "description": "Get attachments for an issue.\n\nArgs:\n    issue_key: JIRA issue key (e.g., \"AS-5\")\n\nReturns:\n    Dictionary with list of attachments, each containing id, filename, size, mimeType, content URL, etc.",
+                "operationId": "get_issue_attachments_api_issue__issue_key__attachments_get",
+                "parameters": [
+                    {
+                        "name": "issue_key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "JIRA issue key (e.g., \"AS-5\")",
+                            "title": "Issue Key"
+                        },
+                        "description": "JIRA issue key"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "UpdateFieldRequest": {
+                "title": "UpdateFieldRequest",
+                "required": [
+                    "field_name",
+                    "value"
+                ],
+                "type": "object",
+                "properties": {
+                    "field_name": {
+                        "title": "Field Name",
+                        "type": "string",
+                        "description": "Field name to update"
+                    },
+                    "value": {
+                        "title": "Value",
+                        "type": "string",
+                        "description": "New value for the field"
+                    }
+                }
+            },
+            "HTTPValidationError": {
+                "title": "HTTPValidationError",
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "title": "Detail",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        }
+                    }
+                }
+            },
+            "ValidationError": {
+                "title": "ValidationError",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "type": "object",
+                "properties": {
+                    "loc": {
+                        "title": "Location",
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        }
+                    },
+                    "msg": {
+                        "title": "Message",
+                        "type": "string"
+                    },
+                    "type": {
+                        "title": "Error Type",
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

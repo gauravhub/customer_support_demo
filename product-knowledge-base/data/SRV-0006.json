@@ -1,0 +1,100 @@
+{
+    "product_id": "SRV-0006",
+    "sku": "TITANMESH-N120-06",
+    "brand": "TitanMesh",
+    "model": "N120 NetworkCore",
+    "form_factor": "1U rack",
+    "use_cases": [
+        "nfv",
+        "routing",
+        "firewall",
+        "load balancing",
+        "telco edge"
+    ],
+    "description": "TitanMesh N120 NetworkCore is a 1U platform optimized for network functions virtualization and high-throughput packet processing. It pairs strong core counts with high-speed NIC options and deterministic latency tuning. With redundant power, front-to-back airflow, and secure boot features, it fits telco edge sites and enterprise network cores. Storage is intentionally modest, emphasizing reliability and fast boot with mirrored M.2 devices.",
+    "specifications": {
+        "cpu": {
+            "socket_count": 2,
+            "supported_families": [
+                "Intel Xeon D (high-core SoC)"
+            ],
+            "configured_model": "Intel Xeon D-2796NT",
+            "cores_threads": "20C/40T",
+            "base_boost_ghz": "2.0 / 2.8",
+            "tdp_w": 185
+        },
+        "memory": {
+            "type": "DDR4 ECC RDIMM",
+            "slots": 8,
+            "max_gb": 512,
+            "configured_gb": 128,
+            "speed_mts": 3200
+        },
+        "storage": {
+            "front_bays": "2x 2.5in hot-swap",
+            "configured_drives": [
+                {
+                    "type": "SATA SSD",
+                    "capacity_tb": 1.92,
+                    "count": 2,
+                    "raid": "RAID1"
+                }
+            ],
+            "internal_boot": "2x M.2 NVMe (mirrored)",
+            "max_raw_tb": 15.36,
+            "controllers": [
+                "SATA RAID (basic)",
+                "software RAID supported"
+            ]
+        },
+        "networking": {
+            "onboard": "2x 10GbE SFP+",
+            "optional": [
+                "2x 25GbE SFP28",
+                "2x 100GbE QSFP28",
+                "DPDK-optimized NICs"
+            ],
+            "configured": "2x 100GbE QSFP28"
+        },
+        "expansion": {
+            "pcie_slots": [
+                "1x PCIe 4.0 x16 (FHHL)",
+                "1x PCIe 4.0 x8 (LP)"
+            ],
+            "gpu_support": "None"
+        },
+        "power_cooling": {
+            "psu": "2x 800W redundant (80+ Platinum)",
+            "redundant_psu_supported": true,
+            "cooling": "High-reliability fan modules tuned for sustained NIC thermals"
+        },
+        "management": {
+            "bmc": "TitanMesh SecureBMC",
+            "features": [
+                "Redfish",
+                "secure boot chain reporting",
+                "remote KVM",
+                "audit logs"
+            ]
+        },
+        "dimensions_weight": {
+            "depth_in": 19.0,
+            "weight_lb": 28.0
+        },
+        "os_compatibility": [
+            "Ubuntu Server LTS",
+            "RHEL",
+            "Debian",
+            "Network OS stacks (VPP/DPDK)",
+            "VMware ESXi (limited)"
+        ],
+        "warranty": "3-year limited, optional 24x7 support"
+    },
+    "tags": [
+        "nfv",
+        "low-latency",
+        "100gbe",
+        "1u",
+        "telco"
+    ]
+}

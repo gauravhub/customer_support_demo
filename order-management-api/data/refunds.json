@@ -1,0 +1,122 @@
+[
+    {
+        "customer_id": "001",
+        "refund_id": "RF00000147",
+        "transaction_id": "CD987654321EF",
+        "order_no": "ORD00009998",
+        "refund_date_time": "2025/12/01 12:15:27",
+        "status": "failed",
+        "failure_reason": "Credit Card Cancelled",
+        "amount": 59.99,
+        "payment_method": "Credit Card",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-5678"
+    },
+    {
+        "customer_id": "002",
+        "refund_id": "RF00000283",
+        "transaction_id": "GH567890123IJ",
+        "order_no": "ORD00009997",
+        "refund_date_time": "2025/12/02 10:30:12",
+        "status": "success",
+        "failure_reason": "NA",
+        "amount": 79.95,
+        "payment_method": "Debit Card",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-9012"
+    },
+    {
+        "customer_id": "001",
+        "refund_id": "RF00000356",
+        "transaction_id": "KL345678901MN",
+        "order_no": "ORD00009996",
+        "refund_date_time": "2025/12/03 14:20:45",
+        "status": "failed",
+        "failure_reason": "UPI ID not found",
+        "amount": 24.99,
+        "payment_method": "UPI",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-3456"
+    },
+    {
+        "customer_id": "002",
+        "refund_id": "RF00000492",
+        "transaction_id": "OP234567890QR",
+        "order_no": "ORD00009995",
+        "refund_date_time": "2025/12/04 17:45:02",
+        "status": "success",
+        "failure_reason": "NA",
+        "amount": 39.99,
+        "payment_method": "Credit Card",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-7890"
+    },
+    {
+        "customer_id": "001",
+        "refund_id": "RF00000518",
+        "transaction_id": "ST123456789UV",
+        "order_no": "ORD00009994",
+        "refund_date_time": "2025/12/05 09:40:19",
+        "status": "failed",
+        "failure_reason": "Fraud Detected",
+        "amount": 45.0,
+        "payment_method": "UPI",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-1234"
+    },
+    {
+        "customer_id": "002",
+        "refund_id": "RF00000674",
+        "transaction_id": "WX987654321YZ",
+        "order_no": "ORD00009993",
+        "refund_date_time": "2025/12/06 13:25:33",
+        "status": "success",
+        "failure_reason": "NA",
+        "amount": 69.99,
+        "payment_method": "Debit Card",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-5678"
+    },
+    {
+        "customer_id": "001",
+        "refund_id": "RF00000729",
+        "transaction_id": "AB012345678CD",
+        "order_no": "ORD00009992",
+        "refund_date_time": "2025/12/07 07:10:27",
+        "status": "failed",
+        "failure_reason": "Insufficient Funds",
+        "amount": 29.99,
+        "payment_method": "UPI",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-9012"
+    },
+    {
+        "customer_id": "002",
+        "refund_id": "RF00000861",
+        "transaction_id": "EF234567890GH",
+        "order_no": "ORD00009991",
+        "refund_date_time": "2025/12/08 16:35:04",
+        "status": "success",
+        "failure_reason": "NA",
+        "amount": 54.99,
+        "payment_method": "Credit Card",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-3456"
+    },
+    {
+        "customer_id": "001",
+        "refund_id": "RF00000935",
+        "transaction_id": "IJ456789012KL",
+        "order_no": "ORD00009990",
+        "refund_date_time": "2025/12/09 10:50:09",
+        "status": "failed",
+        "failure_reason": "Card Expired",
+        "amount": 89.99,
+        "payment_method": "Debit Card",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-7890"
+    },
+    {
+        "customer_id": "002",
+        "refund_id": "RF00001048",
+        "transaction_id": "MN678901234OP",
+        "order_no": "ORD00009989",
+        "refund_date_time": "2025/12/10 12:05:41",
+        "status": "success",
+        "failure_reason": "NA",
+        "amount": 19.99,
+        "payment_method": "UPI",
+        "card_number_upi_id": "xxxx-xxxx-xxxx-1234"
+    }
+]

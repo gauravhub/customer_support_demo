@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: issue-management-api-ingress
+  namespace: default
+  annotations:
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # Using HTTP since CloudFront will handle HTTPS
+    # CloudFront provides default *.cloudfront.net certificate (no custom domain needed)
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+spec:
+  # Uses the IngressClass with EKS AutoMode controller
+  ingressClassName: alb
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: issue-management-api
+            port:
+              number: 80

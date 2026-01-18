@@ -1,0 +1,100 @@
+{
+    "product_id": "SRV-0010",
+    "sku": "ZENITH-X310-10",
+    "brand": "ZenithWorks",
+    "model": "X310 QuietOffice",
+    "form_factor": "tower",
+    "use_cases": [
+        "small office",
+        "file/print",
+        "light database",
+        "line-of-business apps"
+    ],
+    "description": "ZenithWorks X310 QuietOffice is a quiet, office-friendly tower server for small organizations that need reliable local services without a dedicated server room. It focuses on low noise, efficient power use, and straightforward expandability. The system supports ECC memory for data integrity and includes simple remote management features for MSPs. It\u2019s well-suited for file shares, identity services, light SQL workloads, and backup to external targets.",
+    "specifications": {
+        "cpu": {
+            "socket_count": 1,
+            "supported_families": [
+                "Intel Xeon E-2300",
+                "Intel Core i9 (ECC-capable boards)"
+            ],
+            "configured_model": "Intel Xeon E-2378",
+            "cores_threads": "8C/16T",
+            "base_boost_ghz": "2.6 / 4.8",
+            "tdp_w": 80
+        },
+        "memory": {
+            "type": "DDR4 ECC UDIMM",
+            "slots": 4,
+            "max_gb": 128,
+            "configured_gb": 32,
+            "speed_mts": 3200
+        },
+        "storage": {
+            "drive_bays": "4x 3.5in internal + 2x 2.5in internal",
+            "configured_drives": [
+                {
+                    "type": "SATA HDD",
+                    "capacity_tb": 6,
+                    "count": 2,
+                    "raid": "RAID1"
+                },
+                {
+                    "type": "SATA SSD",
+                    "capacity_tb": 1.0,
+                    "count": 1,
+                    "raid": "None (apps)"
+                }
+            ],
+            "internal_boot": "1x M.2 NVMe",
+            "max_raw_tb": 28,
+            "controllers": [
+                "Software RAID supported",
+                "Entry RAID card optional"
+            ]
+        },
+        "networking": {
+            "onboard": "2x 1GbE",
+            "optional": [
+                "1x 10GbE Base-T"
+            ],
+            "configured": "2x 1GbE"
+        },
+        "expansion": {
+            "pcie_slots": [
+                "1x PCIe 4.0 x16",
+                "2x PCIe 3.0 x4"
+            ],
+            "gpu_support": "Optional single-slot GPU for light VDI or media workloads"
+        },
+        "power_cooling": {
+            "psu": "Single 500W 80+ Gold",
+            "redundant_psu_supported": false,
+            "cooling": "Low-noise tower cooling with large-diameter fans"
+        },
+        "management": {
+            "bmc": "Zenith RemoteLite",
+            "features": [
+                "wake-on-lan",
+                "basic health alerts",
+                "remote BIOS settings (limited)"
+            ]
+        },
+        "dimensions_weight": {
+            "notes": "Mid-tower chassis designed for low noise."
+        },
+        "os_compatibility": [
+            "Windows Server",
+            "Ubuntu Server LTS",
+            "RHEL (small business)"
+        ],
+        "warranty": "2-year limited, optional 3-year extension"
+    },
+    "tags": [
+        "small-office",
+        "quiet",
+        "tower",
+        "ecc",
+        "cost-effective"
+    ]
+}

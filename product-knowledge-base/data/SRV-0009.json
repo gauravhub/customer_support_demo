@@ -1,0 +1,98 @@
+{
+    "product_id": "SRV-0009",
+    "sku": "NEBULA-G480-09",
+    "brand": "Nebula Compute",
+    "model": "G480 TrainBox",
+    "form_factor": "4U rack",
+    "use_cases": [
+        "ai training",
+        "mlops",
+        "gpu compute",
+        "hpc gpu"
+    ],
+    "description": "Nebula G480 TrainBox is a 4U GPU-accelerated server purpose-built for AI training and high-throughput compute. It supports multiple double-width GPUs and is designed for sustained thermals during long training runs. High-bandwidth networking options enable fast distributed training and efficient data ingest. The platform includes enhanced power delivery, robust airflow channels, and monitoring that surfaces GPU thermals, power draw, and performance counters.",
+    "specifications": {
+        "cpu": {
+            "socket_count": 2,
+            "supported_families": [
+                "AMD EPYC 9004"
+            ],
+            "configured_model": "AMD EPYC 9654",
+            "cores_threads": "96C/192T",
+            "base_boost_ghz": "2.4 / 3.7",
+            "tdp_w": 360
+        },
+        "memory": {
+            "type": "DDR5 ECC RDIMM",
+            "slots": 24,
+            "max_gb": 6144,
+            "configured_gb": 2048,
+            "speed_mts": 4800
+        },
+        "storage": {
+            "front_bays": "8x 2.5in hot-swap (NVMe)",
+            "configured_drives": [
+                {
+                    "type": "NVMe SSD",
+                    "capacity_tb": 7.68,
+                    "count": 4,
+                    "raid": "RAID0 (scratch) or RAID10 optional"
+                }
+            ],
+            "internal_boot": "2x M.2 NVMe (mirrored)",
+            "max_raw_tb": 61.44,
+            "controllers": [
+                "NVMe RAID (optional)"
+            ]
+        },
+        "networking": {
+            "onboard": "2x 10GbE + management",
+            "optional": [
+                "2x 100GbE QSFP28",
+                "1x 200GbE QSFP56"
+            ],
+            "configured": "2x 100GbE QSFP28"
+        },
+        "expansion": {
+            "pcie_slots": [
+                "8x PCIe 5.0 x16 (GPU)",
+                "2x PCIe 5.0 x16 (NIC/storage)"
+            ],
+            "gpu_support": "Up to 8 double-width GPUs (350-400W class), depending on configuration"
+        },
+        "power_cooling": {
+            "psu": "4x 2200W redundant (N+1 or N+N), 80+ Titanium",
+            "redundant_psu_supported": true,
+            "cooling": "High-performance airflow with partitioned GPU/CPU zones and hot-swap fan trays"
+        },
+        "management": {
+            "bmc": "Nebula ControlPlane",
+            "features": [
+                "Redfish",
+                "GPU telemetry",
+                "secure provisioning",
+                "remote KVM",
+                "power capping"
+            ]
+        },
+        "dimensions_weight": {
+            "depth_in": 35.0,
+            "weight_lb": 95.0
+        },
+        "os_compatibility": [
+            "Ubuntu Server LTS",
+            "RHEL",
+            "Rocky Linux",
+            "Container-optimized Linux",
+            "Slurm-friendly stacks"
+        ],
+        "warranty": "3-year limited, optional 24x7 onsite"
+    },
+    "tags": [
+        "gpu",
+        "training",
+        "pcie5",
+        "100gbe",
+        "4u"
+    ]
+}

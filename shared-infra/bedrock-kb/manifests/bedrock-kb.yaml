@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Bedrock Knowledge Bases infrastructure with OpenSearch backend (Demo - simplified configuration)'
+
+Parameters:
+  OpenSearchDomainName:
+    Type: String
+    Default: cs-demo-kb-opensearch
+    Description: 'OpenSearch domain name (max 28 characters)'
+  
+  S3BucketName:
+    Type: String
+    Description: 'S3 bucket name for knowledge base data sources (must be globally unique)'
+  
+  AdminUserName:
+    Type: String
+    Default: admin
+    Description: 'OpenSearch admin username'
+  
+  AdminUserPassword:
+    Type: String
+    NoEcho: true
+    Description: 'OpenSearch admin user password (min 8 characters)'
+    MinLength: 8
+
+Resources:
+  # S3 Bucket for Knowledge Base Data Sources
+  KBDataSourceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+      Tags:
+        - Key: Purpose
+          Value: BedrockKnowledgeBaseDataSources
+        - Key: Environment
+          Value: demo
+
+  # OpenSearch Domain (Simplified for Demo - No VPC, Public Access)
+  OpenSearchDomain:
+    Type: AWS::OpenSearchService::Domain
+    Properties:
+      DomainName: !Ref OpenSearchDomainName
+      EngineVersion: 'OpenSearch_2.11'
+      ClusterConfig:
+        InstanceType: t3.small.search  # Small instance for demo
+        InstanceCount: 1  # Single instance for demo (no HA)
+        DedicatedMasterEnabled: false
+        ZoneAwarenessEnabled: false  # Single AZ for demo
+      EBSOptions:
+        EBSEnabled: true
+        VolumeType: gp3
+        VolumeSize: 20  # Small volume for demo
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      EncryptionAtRestOptions:
+        Enabled: true
+      AdvancedSecurityOptions:
+        Enabled: true
+        InternalUserDatabaseEnabled: true
+        MasterUserOptions:
+          MasterUserName: !Ref AdminUserName
+          MasterUserPassword: !Ref AdminUserPassword
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${OpenSearchDomainName}/*'
+            Condition:
+              IpAddress:
+                'aws:SourceIp': '0.0.0.0/0'  # Allow from anywhere for demo (restrict in production)
+          # Explicitly allow Bedrock KB role
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt BedrockKBRole.Arn
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${OpenSearchDomainName}/*'
+      DomainEndpointOptions:
+        EnforceHTTPS: true
+        TLSSecurityPolicy: Policy-Min-TLS-1-2-2019-07
+      Tags:
+        - Key: Purpose
+          Value: BedrockKnowledgeBase
+        - Key: Environment
+          Value: demo
+
+  # IAM Role for Bedrock Knowledge Bases Service
+  BedrockKBRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-BedrockKB-Role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'aws:SourceAccount': !Ref AWS::AccountId
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonOpenSearchServiceReadOnlyAccess
+      Policies:
+        - PolicyName: BedrockKBDataAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                Resource: !Sub '${KBDataSourceBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                Resource: !GetAtt KBDataSourceBucket.Arn
+              - Effect: Allow
+                Action:
+                  - 'es:DescribeDomain'
+                  - 'es:ESHttpGet'
+                  - 'es:ESHttpPost'
+                  - 'es:ESHttpPut'
+                  - 'es:DescribeElasticsearchDomain'
+                Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${OpenSearchDomainName}/*'
+              - Effect: Allow
+                Action:
+                  - 'bedrock:InvokeModel'
+                Resource: '*'
+
+  # Secrets Manager Secret for OpenSearch Admin User Password
+  OpenSearchAdminUserSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${AWS::StackName}-opensearch-admin-user'
+      Description: 'OpenSearch admin user credentials for Bedrock Knowledge Bases'
+      SecretString: !Sub |
+        {
+          "username": "${AdminUserName}",
+          "password": "${AdminUserPassword}",
+          "endpoint": "${OpenSearchDomain.DomainEndpoint}"
+        }
+      Tags:
+        - Key: Purpose
+          Value: BedrockKnowledgeBase
+        - Key: Environment
+          Value: demo
+
+Outputs:
+  OpenSearchDomainEndpoint:
+    Description: 'OpenSearch domain endpoint URL'
+    Value: !GetAtt OpenSearchDomain.DomainEndpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-OpenSearchEndpoint'
+  
+  OpenSearchDomainArn:
+    Description: 'OpenSearch domain ARN'
+    Value: !GetAtt OpenSearchDomain.DomainArn
+    Export:
+      Name: !Sub '${AWS::StackName}-OpenSearchArn'
+  
+  OpenSearchDomainName:
+    Description: 'OpenSearch domain name'
+    Value: !Ref OpenSearchDomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-OpenSearchDomainName'
+  
+  S3BucketName:
+    Description: 'S3 bucket name for knowledge base data sources'
+    Value: !Ref KBDataSourceBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-S3BucketName'
+  
+  S3BucketArn:
+    Description: 'S3 bucket ARN'
+    Value: !GetAtt KBDataSourceBucket.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-S3BucketArn'
+  
+  BedrockKBRoleArn:
+    Description: 'IAM role ARN for Bedrock Knowledge Bases service'
+    Value: !GetAtt BedrockKBRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-BedrockKBRoleArn'
+  
+  OpenSearchAdminUserSecretArn:
+    Description: 'Secrets Manager ARN for OpenSearch admin user credentials'
+    Value: !Ref OpenSearchAdminUserSecret
+    Export:
+      Name: !Sub '${AWS::StackName}-OpenSearchAdminUserSecretArn'

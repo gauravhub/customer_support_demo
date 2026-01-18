@@ -1,0 +1,103 @@
+{
+    "product_id": "SRV-0003",
+    "sku": "IRONVAULT-S420-03",
+    "brand": "IronVault",
+    "model": "S420 StorageDense",
+    "form_factor": "2U rack",
+    "use_cases": [
+        "backup",
+        "object storage",
+        "log retention",
+        "cold/warm storage"
+    ],
+    "description": "IronVault S420 StorageDense is built for high-capacity, cost-efficient storage with straightforward serviceability. Optimized for backup targets and scale-out storage nodes, it prioritizes front-access drive density and predictable throughput over peak compute. A small NVMe tier accelerates metadata and indexing while high-capacity HDDs deliver economical raw TB. Quiet fan curves and conservative thermals make it suitable for secondary datacenters and archive racks.",
+    "specifications": {
+        "cpu": {
+            "socket_count": 2,
+            "supported_families": [
+                "Intel Xeon Silver (3rd Gen)"
+            ],
+            "configured_model": "Intel Xeon Silver 4316",
+            "cores_threads": "20C/40T",
+            "base_boost_ghz": "2.3 / 3.4",
+            "tdp_w": 150
+        },
+        "memory": {
+            "type": "DDR4 ECC RDIMM",
+            "slots": 16,
+            "max_gb": 2048,
+            "configured_gb": 256,
+            "speed_mts": 3200
+        },
+        "storage": {
+            "front_bays": "12x 3.5in hot-swap + 2x 2.5in rear",
+            "configured_drives": [
+                {
+                    "type": "SAS HDD",
+                    "capacity_tb": 18,
+                    "count": 12,
+                    "raid": "RAID6 + hot spare"
+                },
+                {
+                    "type": "NVMe SSD",
+                    "capacity_tb": 1.92,
+                    "count": 2,
+                    "raid": "RAID1 (metadata tier)"
+                }
+            ],
+            "internal_boot": "Dual SD/USB boot module (mirrored)",
+            "max_raw_tb": 216,
+            "controllers": [
+                "12Gb/s SAS RAID",
+                "HBA mode supported"
+            ]
+        },
+        "networking": {
+            "onboard": "2x 10GbE Base-T",
+            "optional": [
+                "2x 25GbE SFP28"
+            ],
+            "configured": "2x 10GbE Base-T"
+        },
+        "expansion": {
+            "pcie_slots": [
+                "2x PCIe 4.0 x16",
+                "1x PCIe 4.0 x8"
+            ],
+            "gpu_support": "No GPU focus; supports low-power single-slot cards"
+        },
+        "power_cooling": {
+            "psu": "2x 1200W redundant (80+ Platinum)",
+            "redundant_psu_supported": true,
+            "cooling": "High-static-pressure hot-swap fans for dense 3.5in bays"
+        },
+        "management": {
+            "bmc": "IronVault iManage",
+            "features": [
+                "IPMI 2.0",
+                "Redfish",
+                "drive health telemetry",
+                "remote media"
+            ]
+        },
+        "dimensions_weight": {
+            "depth_in": 33.0,
+            "weight_lb": 62.0
+        },
+        "os_compatibility": [
+            "Ubuntu Server LTS",
+            "RHEL",
+            "SLES",
+            "TrueNAS SCALE (community)",
+            "Ceph-compatible distros"
+        ],
+        "warranty": "5-year chassis, 3-year components"
+    },
+    "tags": [
+        "storage-dense",
+        "backup",
+        "archive",
+        "hdd",
+        "raid6"
+    ]
+}

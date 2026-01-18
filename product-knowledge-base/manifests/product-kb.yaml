@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Product Knowledge Base - Bedrock Knowledge Base resource with S3 data source and OpenSearch vector store'
+
+Parameters:
+  OpenSearchDomainEndpoint:
+    Type: String
+    Description: 'OpenSearch domain endpoint (from shared infrastructure)'
+  
+  OpenSearchDomainArn:
+    Type: String
+    Description: 'OpenSearch domain ARN (from shared infrastructure)'
+  
+  OpenSearchAdminUserSecretArn:
+    Type: String
+    Description: 'Secrets Manager ARN for OpenSearch admin user credentials (from shared infrastructure)'
+  
+  S3BucketName:
+    Type: String
+    Description: 'S3 bucket name for data sources (from shared infrastructure)'
+  
+  S3Prefix:
+    Type: String
+    Default: product-information/
+    Description: 'S3 prefix where product data is stored'
+  
+  BedrockKBRoleArn:
+    Type: String
+    Description: 'IAM role ARN for Bedrock KB service (from shared infrastructure)'
+  
+  KBName:
+    Type: String
+    Default: product-knowledge-base
+    Description: 'Name of the knowledge base'
+  
+  KBDescription:
+    Type: String
+    Default: Product specifications and information knowledge base
+    Description: 'Description of the knowledge base'
+  
+  EmbeddingModelId:
+    Type: String
+    Default: amazon.titan-embed-text-v1
+    Description: 'Bedrock embedding model ID'
+    AllowedValues:
+      - amazon.titan-embed-text-v1
+      - amazon.titan-embed-text-v2:0
+
+Resources:
+  # Bedrock Knowledge Base
+  ProductKnowledgeBase:
+    Type: AWS::Bedrock::KnowledgeBase
+    Properties:
+      Name: !Ref KBName
+      Description: !Ref KBDescription
+      RoleArn: !Ref BedrockKBRoleArn
+      KnowledgeBaseConfiguration:
+        Type: VECTOR
+        VectorKnowledgeBaseConfiguration:
+          EmbeddingModelArn: !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/${EmbeddingModelId}'
+      StorageConfiguration:
+        Type: OPENSEARCH_MANAGED_CLUSTER
+        OpensearchManagedClusterConfiguration:
+          DomainArn: !Ref OpenSearchDomainArn
+          DomainEndpoint: !Sub 
+            - 'https://${Endpoint}'
+            - Endpoint: !Ref OpenSearchDomainEndpoint
+          VectorIndexName: !Sub '${KBName}-index'
+          FieldMapping:
+            VectorField: vector
+            TextField: text
+            MetadataField: metadata
+  
+  # S3 Data Source
+  ProductKBDataSource:
+    Type: AWS::Bedrock::DataSource
+    Properties:
+      KnowledgeBaseId: !Ref ProductKnowledgeBase
+      Name: !Sub '${KBName}-datasource'
+      Description: Product information data source from S3
+      DataSourceConfiguration:
+        Type: S3
+        S3Configuration:
+          BucketArn: !Sub 'arn:aws:s3:::${S3BucketName}'
+          BucketOwnerAccountId: !Ref AWS::AccountId
+          InclusionPrefixes:
+            - !Ref S3Prefix
+
+Outputs:
+  KnowledgeBaseId:
+    Description: 'Bedrock Knowledge Base ID'
+    Value: !Ref ProductKnowledgeBase
+    Export:
+      Name: !Sub '${AWS::StackName}-KnowledgeBaseId'
+  
+  KnowledgeBaseArn:
+    Description: 'Bedrock Knowledge Base ARN'
+    Value: !GetAtt ProductKnowledgeBase.KnowledgeBaseArn
+    Export:
+      Name: !Sub '${AWS::StackName}-KnowledgeBaseArn'
+  
+  DataSourceId:
+    Description: 'Data Source ID'
+    Value: !GetAtt ProductKBDataSource.DataSourceId
+    Export:
+      Name: !Sub '${AWS::StackName}-DataSourceId'

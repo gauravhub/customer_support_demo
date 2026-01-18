@@ -1,0 +1,99 @@
+{
+    "product_id": "SRV-0008",
+    "sku": "RUGGEDSIGNAL-T180-08",
+    "brand": "RuggedSignal",
+    "model": "T180 HarshSite",
+    "form_factor": "tower / rack-convertible",
+    "use_cases": [
+        "industrial edge",
+        "manufacturing",
+        "oil and gas",
+        "remote sites"
+    ],
+    "description": "RuggedSignal T180 HarshSite is engineered for industrial environments where dust, vibration, and temperature swings are common. It can operate in extended ambient conditions with filtered airflow and reinforced chassis bracing. The system supports flexible storage for local logging and buffering and offers optional conformal-coated boards for higher resilience. It\u2019s designed for OT/IT convergence scenarios where reliability and serviceability outweigh raw density.",
+    "specifications": {
+        "cpu": {
+            "socket_count": 1,
+            "supported_families": [
+                "Intel Xeon E-2300"
+            ],
+            "configured_model": "Intel Xeon E-2388G",
+            "cores_threads": "8C/16T",
+            "base_boost_ghz": "3.2 / 5.1",
+            "tdp_w": 95
+        },
+        "memory": {
+            "type": "DDR4 ECC UDIMM",
+            "slots": 4,
+            "max_gb": 128,
+            "configured_gb": 64,
+            "speed_mts": 3200
+        },
+        "storage": {
+            "front_bays": "4x 3.5in (tool-less carriers) + 2x 2.5in internal",
+            "configured_drives": [
+                {
+                    "type": "SATA HDD",
+                    "capacity_tb": 8,
+                    "count": 2,
+                    "raid": "RAID1"
+                },
+                {
+                    "type": "SATA SSD",
+                    "capacity_tb": 1.92,
+                    "count": 1,
+                    "raid": "None"
+                }
+            ],
+            "internal_boot": "1x M.2 SATA",
+            "max_raw_tb": 40,
+            "controllers": [
+                "SATA RAID (basic)"
+            ]
+        },
+        "networking": {
+            "onboard": "2x 1GbE",
+            "optional": [
+                "1x 10GbE Base-T",
+                "cellular modem module (out-of-band)"
+            ],
+            "configured": "1x 10GbE Base-T"
+        },
+        "expansion": {
+            "pcie_slots": [
+                "1x PCIe 4.0 x16",
+                "1x PCIe 4.0 x4"
+            ],
+            "gpu_support": "Supports a single low-to-mid power workstation GPU (200W class) if tower mode"
+        },
+        "power_cooling": {
+            "psu": "Single 750W (industrial-rated), optional DC input kit",
+            "redundant_psu_supported": false,
+            "cooling": "Filtered, positive-pressure airflow with replaceable intake filters"
+        },
+        "management": {
+            "bmc": "RuggedSignal RemoteAssist",
+            "features": [
+                "basic remote console",
+                "event logs",
+                "secure firmware updates"
+            ]
+        },
+        "dimensions_weight": {
+            "notes": "Tower chassis; rack conversion kit available."
+        },
+        "os_compatibility": [
+            "Ubuntu Server LTS",
+            "Windows Server",
+            "IoT-focused Linux distros"
+        ],
+        "warranty": "3-year limited, extended environmental coverage optional"
+    },
+    "tags": [
+        "rugged",
+        "industrial",
+        "tower",
+        "edge",
+        "extended-ambient"
+    ]
+}

@@ -1,0 +1,102 @@
+{
+    "product_id": "SRV-0007",
+    "sku": "GLACIER-H340-07",
+    "brand": "Glacier Ridge",
+    "model": "H340 HCI Node",
+    "form_factor": "2U rack",
+    "use_cases": [
+        "hyperconverged",
+        "virtualization",
+        "vSAN/ceph",
+        "private cloud"
+    ],
+    "description": "Glacier Ridge H340 is a hyperconverged-ready node designed for software-defined storage and virtualization stacks. It combines a fast NVMe cache tier with capacity drives to support mixed I/O profiles common in HCI clusters. The system is tuned for predictable rebuild performance and includes telemetry features that surface drive wear, cache hit rates, and thermal headroom. With balanced CPU and memory, it\u2019s a solid choice for mid-sized vSphere or KVM clusters.",
+    "specifications": {
+        "cpu": {
+            "socket_count": 2,
+            "supported_families": [
+                "AMD EPYC 7003"
+            ],
+            "configured_model": "AMD EPYC 7543",
+            "cores_threads": "32C/64T",
+            "base_boost_ghz": "2.8 / 3.7",
+            "tdp_w": 225
+        },
+        "memory": {
+            "type": "DDR4 ECC RDIMM",
+            "slots": 16,
+            "max_gb": 4096,
+            "configured_gb": 768,
+            "speed_mts": 3200
+        },
+        "storage": {
+            "front_bays": "10x 2.5in hot-swap (tri-mode)",
+            "configured_drives": [
+                {
+                    "type": "NVMe SSD",
+                    "capacity_tb": 3.84,
+                    "count": 2,
+                    "raid": "No RAID (cache tier per HCI)"
+                },
+                {
+                    "type": "SAS HDD",
+                    "capacity_tb": 4.0,
+                    "count": 8,
+                    "raid": "No RAID (SDS managed)"
+                }
+            ],
+            "internal_boot": "2x M.2 SATA (mirrored)",
+            "max_raw_tb": 76.8,
+            "controllers": [
+                "Tri-mode HBA/RAID; HBA mode recommended for SDS"
+            ]
+        },
+        "networking": {
+            "onboard": "2x 10GbE Base-T + management",
+            "optional": [
+                "2x 25GbE SFP28"
+            ],
+            "configured": "2x 25GbE SFP28"
+        },
+        "expansion": {
+            "pcie_slots": [
+                "2x PCIe 4.0 x16",
+                "1x PCIe 4.0 x8"
+            ],
+            "gpu_support": "Optional single-wide accelerator for compression/crypto offload"
+        },
+        "power_cooling": {
+            "psu": "2x 1200W redundant",
+            "redundant_psu_supported": true,
+            "cooling": "Hot-swap fan modules optimized for drive bay thermals"
+        },
+        "management": {
+            "bmc": "Glacier OOB Suite",
+            "features": [
+                "Redfish",
+                "fleet profiles",
+                "storage telemetry",
+                "remote KVM"
+            ]
+        },
+        "dimensions_weight": {
+            "depth_in": 31.0,
+            "weight_lb": 58.0
+        },
+        "os_compatibility": [
+            "VMware ESXi",
+            "Ubuntu Server LTS",
+            "RHEL",
+            "SLES",
+            "Ceph/KVM stacks"
+        ],
+        "warranty": "3-year limited, optional 24x7x4 onsite"
+    },
+    "tags": [
+        "hci",
+        "sds",
+        "nvme-cache",
+        "25gbe",
+        "2u"
+    ]
+}

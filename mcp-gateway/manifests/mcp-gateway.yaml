@@ -1,0 +1,308 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AgentCore Gateway with MCP protocol - Cognito JWT auth, 3 targets (Order Management, Issue Management, Product Knowledge Base)'
+
+Parameters:
+  Region:
+    Type: String
+    Default: us-west-2
+    Description: 'AWS region'
+  
+  CognitoDomainPrefix:
+    Type: String
+    Default: customer-support-mcp-gateway
+    Description: 'Cognito domain prefix (must be globally unique)'
+  
+  CloudFrontDistributionDomain:
+    Type: String
+    Description: 'CloudFront distribution domain name (e.g., d1234567890.cloudfront.net)'
+  
+  ProductKnowledgeBaseId:
+    Type: String
+    Description: 'Product Knowledge Base ID (from product-knowledge-base stack)'
+  
+  OrderManagementApiKeyProviderArn:
+    Type: String
+    Description: 'ARN of API key provider for Order Management API (created via CLI)'
+  
+  IssueManagementApiKeyProviderArn:
+    Type: String
+    Description: 'ARN of API key provider for Issue Management API (created via CLI)'
+  
+  OrderManagementOpenApiSchemaUri:
+    Type: String
+    Description: 'S3 URI or HTTP URL to Order Management API OpenAPI schema'
+  
+  IssueManagementOpenApiSchemaUri:
+    Type: String
+    Description: 'S3 URI or HTTP URL to Issue Management API OpenAPI schema'
+  
+  BedrockAgentRuntimeSmithySchemaUri:
+    Type: String
+    Default: ''
+    Description: 'S3 URI or HTTP URL to Bedrock Agent Runtime Smithy schema (optional, if not provided will use AWS default)'
+
+Resources:
+  # CloudWatch Log Group for Gateway
+  GatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/vendedlogs/bedrock-agentcore/gateway/APPLICATION_LOGS/${AgentCoreGateway}'
+      RetentionInDays: 7
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-gateway-logs'
+        - Key: Purpose
+          Value: 'AgentCore Gateway application logs'
+  
+  # Cognito User Pool
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${AWS::StackName}-user-pool'
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+      UserPoolTags:
+        Purpose: MCPGatewayAuth
+        Environment: demo
+
+  # Cognito User Pool Domain (required for OAuth2 token endpoint)
+  CognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref CognitoDomainPrefix
+      UserPoolId: !Ref CognitoUserPool
+
+  # Cognito Resource Server (required for client_credentials flow)
+  CognitoResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      Identifier: !Sub '${AWS::StackName}'
+      Name: !Sub '${AWS::StackName}-resource-server'
+      Scopes:
+        - ScopeName: gateway.access
+          ScopeDescription: Access to MCP Gateway
+
+  # Cognito User Pool Client
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: CognitoResourceServer  # Must create resource server first
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: !Sub '${AWS::StackName}-client'
+      GenerateSecret: true
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthScopes:
+        - !Sub '${AWS::StackName}/gateway.access'
+      AccessTokenValidity: 24  # 24 hours
+      TokenValidityUnits:
+        AccessToken: hours
+      SupportedIdentityProviders:
+        - COGNITO
+
+  # IAM Role for Gateway
+  GatewayRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock-agentcore.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Policies:
+        - PolicyName: BedrockKnowledgeBaseAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:Retrieve
+                  - bedrock:RetrieveAndGenerate
+                  - bedrock:GetKnowledgeBase
+                  - bedrock:InvokeModel
+                Resource: !Sub 'arn:aws:bedrock:${Region}:${AWS::AccountId}:knowledge-base/${ProductKnowledgeBaseId}'
+              - Effect: Allow
+                Action:
+                  - bedrock:GetFoundationModel
+                  - bedrock:ListFoundationModels
+                Resource: '*'
+        - PolicyName: AgentCoreWorkloadIdentityAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:GetWorkloadAccessToken
+                  - bedrock-agentcore:GetResourceApiKey
+                Resource:
+                  - !Sub 'arn:aws:bedrock-agentcore:${Region}:${AWS::AccountId}:workload-identity-directory/default'
+                  - !Sub 'arn:aws:bedrock-agentcore:${Region}:${AWS::AccountId}:workload-identity-directory/default/*'
+                  - !Sub 'arn:aws:bedrock-agentcore:${Region}:${AWS::AccountId}:token-vault/default'
+                  - !Sub 'arn:aws:bedrock-agentcore:${Region}:${AWS::AccountId}:token-vault/default/*'
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${Region}:${AWS::AccountId}:secret:*'
+
+  # AgentCore Gateway
+  AgentCoreGateway:
+    Type: AWS::BedrockAgentCore::Gateway
+    Properties:
+      Name: !Sub '${AWS::StackName}'
+      ProtocolType: MCP
+      AuthorizerType: CUSTOM_JWT
+      AuthorizerConfiguration:
+        CustomJWTAuthorizer:
+          DiscoveryUrl: !Sub 'https://cognito-idp.${Region}.amazonaws.com/${CognitoUserPool}/.well-known/openid-configuration'
+          AllowedClients:
+            - !Ref CognitoUserPoolClient
+          # Note: AllowedAudience is not set - Gateway validates tokens based on allowedClients only
+          # This matches the working customer-support-mcp-gateway configuration
+      RoleArn: !GetAtt GatewayRole.Arn
+      Description: 'MCP Gateway for Customer Support Demo - Order Management, Issue Management, and Product Knowledge Base'
+      ExceptionLevel: DEBUG
+      Tags:
+        Purpose: MCPGateway
+        Environment: demo
+
+  # Target 1: Order Management API
+  OrderManagementTarget:
+    Type: AWS::BedrockAgentCore::GatewayTarget
+    Properties:
+      Name: order-management-api
+      GatewayIdentifier: !Ref AgentCoreGateway
+      Description: 'Order Management API - Query customers, orders, transactions, and refunds'
+      CredentialProviderConfigurations:
+        - CredentialProviderType: API_KEY
+          CredentialProvider:
+            ApiKeyCredentialProvider:
+              ProviderArn: !Ref OrderManagementApiKeyProviderArn
+              CredentialLocation: HEADER
+              CredentialParameterName: X-API-Key
+      TargetConfiguration:
+        Mcp:
+          OpenApiSchema:
+            S3:
+              Uri: !Ref OrderManagementOpenApiSchemaUri
+
+  # Target 2: Issue Management API
+  IssueManagementTarget:
+    Type: AWS::BedrockAgentCore::GatewayTarget
+    Properties:
+      Name: issue-management-api
+      GatewayIdentifier: !Ref AgentCoreGateway
+      Description: 'Issue Management API - Manage JIRA issues, get fields, update fields, get attachments'
+      CredentialProviderConfigurations:
+        - CredentialProviderType: API_KEY
+          CredentialProvider:
+            ApiKeyCredentialProvider:
+              ProviderArn: !Ref IssueManagementApiKeyProviderArn
+              CredentialLocation: HEADER
+              CredentialParameterName: X-API-Key
+      TargetConfiguration:
+        Mcp:
+          OpenApiSchema:
+            S3:
+              Uri: !Ref IssueManagementOpenApiSchemaUri
+
+  # Target 3: Product Knowledge Base
+  ProductKnowledgeBaseTarget:
+    Type: AWS::BedrockAgentCore::GatewayTarget
+    Properties:
+      Name: product-knowledge-base
+      GatewayIdentifier: !Ref AgentCoreGateway
+      Description: 'Product Knowledge Base - Retrieve and generate responses from product information'
+      CredentialProviderConfigurations:
+        - CredentialProviderType: GATEWAY_IAM_ROLE
+      TargetConfiguration:
+        Mcp:
+          SmithyModel:
+            S3:
+              Uri: !If
+                - HasBedrockSmithySchema
+                - !Ref BedrockAgentRuntimeSmithySchemaUri
+                - !Sub 's3://customer-support-kb-datasources-${AWS::AccountId}/api-schemas/bedrock-agent-runtime-retrieve-only.json'
+            # Using a custom filtered Smithy model that only includes the Retrieve operation.
+            # This model was created by extracting only the Retrieve operation and its dependencies
+            # from the full bedrock-agent-runtime-2023-07-26.json schema.
+
+Conditions:
+  HasBedrockSmithySchema: !Not [!Equals [!Ref BedrockAgentRuntimeSmithySchemaUri, '']]
+
+Outputs:
+  GatewayLogGroupName:
+    Description: 'CloudWatch Log Group for Gateway logs'
+    Value: !Ref GatewayLogGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-GatewayLogGroupName'
+  
+  CognitoUserPoolId:
+    Description: 'Cognito User Pool ID'
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoUserPoolId'
+  
+  CognitoUserPoolClientId:
+    Description: 'Cognito User Pool Client ID'
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoUserPoolClientId'
+  
+  CognitoUserPoolClientSecret:
+    Description: 'Cognito User Pool Client Secret'
+    Value: !GetAtt CognitoUserPoolClient.ClientSecret
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoUserPoolClientSecret'
+  
+  CognitoDiscoveryUrl:
+    Description: 'Cognito OIDC Discovery URL'
+    Value: !Sub 'https://cognito-idp.${Region}.amazonaws.com/${CognitoUserPool}/.well-known/openid-configuration'
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoDiscoveryUrl'
+  
+  CognitoTokenEndpoint:
+    Description: 'Cognito OAuth2 Token Endpoint URL'
+    Value: !Sub 'https://${CognitoUserPoolDomain}.auth.${Region}.amazoncognito.com/oauth2/token'
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoTokenEndpoint'
+  
+  CognitoResourceServerIdentifier:
+    Description: 'Cognito Resource Server Identifier (OAuth scope prefix)'
+    Value: !Ref CognitoResourceServer
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoResourceServerIdentifier'
+  
+  GatewayId:
+    Description: 'AgentCore Gateway ID'
+    Value: !Ref AgentCoreGateway
+    Export:
+      Name: !Sub '${AWS::StackName}-GatewayId'
+  
+  GatewayArn:
+    Description: 'AgentCore Gateway ARN'
+    Value: !GetAtt AgentCoreGateway.GatewayArn
+    Export:
+      Name: !Sub '${AWS::StackName}-GatewayArn'
+  
+  GatewayUrl:
+    Description: 'MCP Gateway Endpoint URL'
+    Value: !GetAtt AgentCoreGateway.GatewayUrl
+    Export:
+      Name: !Sub '${AWS::StackName}-GatewayUrl'

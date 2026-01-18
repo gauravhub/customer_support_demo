@@ -1,0 +1,295 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Order Management API",
+        "description": "REST API for querying order management database",
+        "version": "0.1.0"
+    },
+    "servers": [
+        {
+            "url": "https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/order-management",
+            "description": "Order Management API Server (CloudFront HTTPS endpoint)"
+        }
+    ],
+    "paths": {
+        "/api/customer": {
+            "get": {
+                "summary": "Find Customer",
+                "description": "Find a customer by email or customer ID.\n\nArgs:\n    email: Customer's email address (optional)\n    customer_id: Customer ID (optional)\n\nReturns:\n    Dictionary with customer information if found, empty dict if not found.\n    Contains: customer_id, name, email",
+                "operationId": "find_customer_api_customer_get",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "description": "Customer email address",
+                            "default": "",
+                            "title": "Email"
+                        },
+                        "description": "Customer email address"
+                    },
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "description": "Customer ID",
+                            "default": "",
+                            "title": "Customer Id"
+                        },
+                        "description": "Customer ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Find Customer Api Customer Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/order": {
+            "get": {
+                "summary": "Find Order",
+                "description": "Find an order by order number.\n\nArgs:\n    order_no: Order number (e.g., \"ORD00009998\")\n\nReturns:\n    Dictionary with order information if found, empty dict if not found.\n    Contains: order_no, customer_id, order_status, order_date_time, etc.",
+                "operationId": "find_order_api_order_get",
+                "parameters": [
+                    {
+                        "name": "order_no",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "Order number (e.g., ORD00009998)",
+                            "title": "Order No"
+                        },
+                        "description": "Order number (e.g., ORD00009998)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Find Order Api Order Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transaction": {
+            "get": {
+                "summary": "Find Transaction",
+                "description": "Find a transaction by transaction ID.\n\nArgs:\n    transaction_id: Transaction ID to search for\n\nReturns:\n    Dictionary with transaction information if found, empty dict if not found.\n    Contains: transaction_id, order_no, customer_id, transaction_status, amount, etc.",
+                "operationId": "find_transaction_api_transaction_get",
+                "parameters": [
+                    {
+                        "name": "transaction_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "Transaction ID to search for",
+                            "title": "Transaction Id"
+                        },
+                        "description": "Transaction ID to search for"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Find Transaction Api Transaction Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transaction/order/{order_no}": {
+            "get": {
+                "summary": "Get Transaction For Order",
+                "description": "Get transaction information for an order.\n\nArgs:\n    order_no: Order number (e.g., \"ORD00009998\")\n\nReturns:\n    Dictionary with transaction information if found, empty dict if not found.\n    Contains: transaction_id, order_no, customer_id, transaction_status, amount, etc.",
+                "operationId": "get_transaction_for_order_api_transaction_order__order_no__get",
+                "parameters": [
+                    {
+                        "name": "order_no",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Order No"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Get Transaction For Order Api Transaction Order  Order No  Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/refund/order/{order_no}": {
+            "get": {
+                "summary": "Get Refund For Order",
+                "description": "Get refund information for an order.\n\nArgs:\n    order_no: Order number (e.g., \"ORD00009998\")\n\nReturns:\n    Dictionary with refund information if found, empty dict if not found.\n    Contains: refund_id, order_no, transaction_id, refund_status, refund_amount, etc.",
+                "operationId": "get_refund_for_order_api_refund_order__order_no__get",
+                "parameters": [
+                    {
+                        "name": "order_no",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Order No"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Get Refund For Order Api Refund Order  Order No  Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}

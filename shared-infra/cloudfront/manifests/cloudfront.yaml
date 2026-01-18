@@ -1,0 +1,190 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFront distribution in front of ALBs for customer-support-demo APIs (HTTPS endpoint)'
+
+Parameters:
+  OrderManagementALBDnsName:
+    Type: String
+    Description: 'Order Management API ALB DNS name (e.g., k8s-default-order-xxx.us-west-2.elb.amazonaws.com)'
+  
+  IssueManagementALBDnsName:
+    Type: String
+    Description: 'Issue Management API ALB DNS name (e.g., k8s-default-issue-xxx.us-west-2.elb.amazonaws.com)'
+
+Resources:
+  # CloudFront Function to rewrite paths (strip /order-management-api and /issue-management-api prefixes)
+  PathRewriteFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: CustomerSupportDemo-PathRewrite
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Rewrite paths to strip API prefixes
+        Runtime: cloudfront-js-1.0
+      FunctionCode: |
+        function handler(event) {
+            var request = event.request;
+            var uri = request.uri;
+            
+            // Strip /order-management prefix
+            if (uri.startsWith('/order-management/')) {
+                request.uri = uri.replace('/order-management', '');
+            }
+            // Strip /issue-management prefix
+            else if (uri.startsWith('/issue-management/')) {
+                request.uri = uri.replace('/issue-management', '');
+            }
+            // Handle root paths
+            else if (uri === '/order-management') {
+                request.uri = '/';
+            }
+            else if (uri === '/issue-management') {
+                request.uri = '/';
+            }
+            
+            return request;
+        }
+
+  # Origin Request Policy - Forward all headers including X-API-Key
+  OriginRequestPolicy:
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: CustomerSupportDemo-ForwardAllHeaders
+        Comment: Forward all headers including X-API-Key for customer-support-demo APIs
+        HeadersConfig:
+          HeaderBehavior: allViewer
+        QueryStringsConfig:
+          QueryStringBehavior: all
+        CookiesConfig:
+          CookieBehavior: all
+
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: 'Customer Support Demo - CloudFront Distribution for Order and Issue Management APIs'
+        Enabled: true
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        
+        # Origins - Both ALBs
+        Origins:
+          - Id: OrderManagementALB
+            DomainName: !Ref OrderManagementALBDnsName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+              OriginSSLProtocols:
+                - TLSv1.2
+              OriginReadTimeout: 60
+              OriginKeepaliveTimeout: 5
+          - Id: IssueManagementALB
+            DomainName: !Ref IssueManagementALBDnsName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+              OriginSSLProtocols:
+                - TLSv1.2
+              OriginReadTimeout: 60
+              OriginKeepaliveTimeout: 5
+        
+        # Default cache behavior (for root path)
+        DefaultCacheBehavior:
+          TargetOriginId: OrderManagementALB
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          Compress: true
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # Managed-CachingDisabled
+          OriginRequestPolicyId: !Ref OriginRequestPolicy
+        
+        # Cache behaviors for path-based routing
+        CacheBehaviors:
+          - PathPattern: '/order-management/*'
+            TargetOriginId: OrderManagementALB
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - DELETE
+              - GET
+              - HEAD
+              - OPTIONS
+              - PATCH
+              - POST
+              - PUT
+            CachedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            Compress: true
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: !Ref OriginRequestPolicy
+            FunctionAssociations:
+              - EventType: viewer-request
+                FunctionARN: !GetAtt PathRewriteFunction.FunctionMetadata.FunctionARN
+          - PathPattern: '/issue-management/*'
+            TargetOriginId: IssueManagementALB
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - DELETE
+              - GET
+              - HEAD
+              - OPTIONS
+              - PATCH
+              - POST
+              - PUT
+            CachedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            Compress: true
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: !Ref OriginRequestPolicy
+            FunctionAssociations:
+              - EventType: viewer-request
+                FunctionARN: !GetAtt PathRewriteFunction.FunctionMetadata.FunctionARN
+        
+        # Price class - optimize costs
+        PriceClass: PriceClass_100  # US, Canada, Europe
+        
+        # Custom error responses
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 403
+            ResponsePagePath: /error
+            ErrorCachingMinTTL: 10
+          - ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /error
+            ErrorCachingMinTTL: 10
+
+Outputs:
+  CloudFrontDomainName:
+    Description: 'CloudFront distribution domain name (use this for HTTPS endpoint)'
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDomain'
+  
+  CloudFrontDistributionId:
+    Description: 'CloudFront distribution ID'
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontId'
+  
+  CloudFrontURL:
+    Description: 'Full CloudFront URL for HTTPS access'
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontURL'

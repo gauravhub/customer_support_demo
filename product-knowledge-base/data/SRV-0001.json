@@ -1,0 +1,105 @@
+{
+    "product_id": "SRV-0001",
+    "sku": "NORTHRIDGE-R240-01",
+    "brand": "Northridge Compute",
+    "model": "R240 EdgeRack",
+    "form_factor": "1U rack",
+    "use_cases": [
+        "edge",
+        "branch office",
+        "web serving",
+        "light virtualization"
+    ],
+    "description": "The Northridge R240 EdgeRack is a compact 1U server built for space- and power-constrained edge deployments. It balances strong single-socket performance with ample NVMe options for fast local caching, making it a great fit for retail branches, factory floors, and content delivery nodes. Tool-less top cover access and front-serviceable bays simplify maintenance in remote sites. Optional dual 10GbE helps consolidate networking while keeping latency low for locally processed workloads.",
+    "specifications": {
+        "cpu": {
+            "socket_count": 1,
+            "supported_families": [
+                "Intel Xeon Silver (3rd Gen)",
+                "Intel Xeon Gold (3rd Gen)"
+            ],
+            "configured_model": "Intel Xeon Silver 4310",
+            "cores_threads": "12C/24T",
+            "base_boost_ghz": "2.1 / 3.3",
+            "tdp_w": 120
+        },
+        "memory": {
+            "type": "DDR4 ECC RDIMM",
+            "slots": 8,
+            "max_gb": 1024,
+            "configured_gb": 128,
+            "speed_mts": 3200
+        },
+        "storage": {
+            "front_bays": "4x 2.5in hot-swap",
+            "configured_drives": [
+                {
+                    "type": "NVMe SSD",
+                    "capacity_tb": 1.92,
+                    "count": 2,
+                    "raid": "RAID1"
+                },
+                {
+                    "type": "SATA SSD",
+                    "capacity_tb": 3.84,
+                    "count": 2,
+                    "raid": "RAID10 (via HBA/RAID)"
+                }
+            ],
+            "internal_boot": "2x M.2 SATA (mirrored)",
+            "max_raw_tb": 61.44,
+            "controllers": [
+                "PCIe NVMe backplane",
+                "Hardware RAID (optional)"
+            ]
+        },
+        "networking": {
+            "onboard": "2x 1GbE",
+            "optional": [
+                "2x 10GbE SFP+",
+                "1x 25GbE SFP28"
+            ],
+            "configured": "2x 10GbE SFP+"
+        },
+        "expansion": {
+            "pcie_slots": [
+                "1x PCIe 4.0 x16 (FHHL)",
+                "1x PCIe 4.0 x8 (LP)"
+            ],
+            "gpu_support": "Not intended for double-width GPUs; supports single-slot low-profile accelerators"
+        },
+        "power_cooling": {
+            "psu": "1x 550W (optional redundant 2x 550W)",
+            "redundant_psu_supported": true,
+            "cooling": "High-efficiency fan wall with N+1"
+        },
+        "management": {
+            "bmc": "NC-iLOM 2.0",
+            "features": [
+                "IPMI 2.0",
+                "Redfish",
+                "remote KVM",
+                "virtual media",
+                "hardware telemetry"
+            ]
+        },
+        "dimensions_weight": {
+            "depth_in": 23.5,
+            "weight_lb": 24.0
+        },
+        "os_compatibility": [
+            "Ubuntu Server LTS",
+            "RHEL",
+            "Windows Server",
+            "VMware ESXi (limited config matrix)"
+        ],
+        "warranty": "3-year limited, next-business-day parts"
+    },
+    "tags": [
+        "edge",
+        "nvme",
+        "1u",
+        "remote-management",
+        "low-power"
+    ]
+}
