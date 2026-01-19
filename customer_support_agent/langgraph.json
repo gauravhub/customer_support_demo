@@ -1,0 +1,10 @@
+{
+    "graphs": {
+        "Customer Support Agent": "./src/agent/graph.py:graph"
+    },
+    "python_version": "3.12",
+    "env": "./.env",
+    "dependencies": [
+        "."
+    ]
+}
