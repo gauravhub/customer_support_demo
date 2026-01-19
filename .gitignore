@@ -144,5 +144,4 @@ kubeconfig
 customer_support_agent_old/
 
 # LangGraph
-**/.langgraph_api/
 .langgraph_api/
