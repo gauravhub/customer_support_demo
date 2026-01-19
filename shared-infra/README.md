@@ -7,6 +7,7 @@ Shared AWS infrastructure deployment for customer-support-demo project.
 - **EKS Cluster**: Shared Kubernetes cluster (`customer-support-demo`)
 - **CloudFront Distribution**: Shared HTTPS endpoint with path-based routing
 - **Bedrock Knowledge Bases**: Shared infrastructure for knowledge bases with OpenSearch backend
+- **AgentCore Memory**: Long-term memory for AI agents with built-in strategies
 
 ## Structure
 
@@ -32,6 +33,12 @@ shared-infra/
     └── scripts/
         ├── create-kb-infra.sh        # Create Bedrock KB infrastructure
         └── delete-kb-infra.sh       # Delete Bedrock KB infrastructure
+└── memory/
+    ├── manifests/
+    │   └── memory-resource.yaml      # Memory resource configuration
+    └── scripts/
+        ├── create-memory.sh          # Create memory resource
+        └── list-strategies.sh        # List memory strategies
 ```
 
 ## EKS Cluster
@@ -216,3 +223,44 @@ Applications (like `product-knowledge-base/`) can:
 4. Reference the IAM role for Bedrock KB service access
 
 See `../product-knowledge-base/README.md` for product-specific ingestion logic.
+
+## AgentCore Memory
+
+AgentCore Memory provides short-term and long-term memory capabilities for AI agents.
+
+### Built-in Strategies
+
+- **Semantic Memory**: Extracts meaningful facts and knowledge
+- **User Preference Memory**: Extracts user preferences and behavioral patterns
+- **Summary Memory**: Creates summaries of conversations
+- **Episodic Memory**: Extracts episodes and generates reflections
+
+### Create Memory Resource
+
+```bash
+cd memory/scripts
+
+# Deploy with all built-in strategies enabled (default)
+./create-memory.sh
+
+# Deploy with specific strategies
+ENABLE_SEMANTIC=true \
+ENABLE_USER_PREFERENCE=true \
+ENABLE_SUMMARY=true \
+ENABLE_EPISODIC=false \
+./create-memory.sh
+```
+
+**Environment Variables:**
+- `REGION` - AWS region (default: `us-west-2`)
+- `MEMORY_NAME` - Memory resource name (default: `customer-support-memory`)
+- `EVENT_EXPIRY_DAYS` - Days to retain events (default: `90`)
+- `ENABLE_SEMANTIC` - Enable semantic strategy (default: `true`)
+- `ENABLE_USER_PREFERENCE` - Enable user preference strategy (default: `true`)
+- `ENABLE_SUMMARY` - Enable summary strategy (default: `true`)
+- `ENABLE_EPISODIC` - Enable episodic strategy (default: `false`)
+
+### References
+
+- [AgentCore Memory Documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html)
+- [Built-in Strategies](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/built-in-strategies.html)

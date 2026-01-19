@@ -89,13 +89,15 @@ if [ -z "$CLOUDFRONT_DOMAIN" ]; then
     CLOUDFRONT_DOMAIN=$(aws cloudformation describe-stacks \
         --stack-name customer-support-demo-cloudfront \
         --region "$REGION" \
-        --query 'Stacks[0].Outputs[?OutputKey==`DistributionDomain`].OutputValue' \
+        --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontURL`].OutputValue' \
         --output text 2>/dev/null)
     
     if [ -z "$CLOUDFRONT_DOMAIN" ] || [ "$CLOUDFRONT_DOMAIN" = "None" ]; then
         echo "⚠ Warning: Could not fetch CloudFront domain from CloudFormation"
         echo "OpenAPI specs will not have CloudFront URLs updated"
     else
+        # Extract domain from URL (remove https:// if present)
+        CLOUDFRONT_DOMAIN=$(echo "$CLOUDFRONT_DOMAIN" | sed 's|^https://||' | sed 's|/$||')
         echo "CloudFront Domain: $CLOUDFRONT_DOMAIN"
     fi
 else

@@ -67,6 +67,10 @@ An AI-powered customer support system with REST APIs, Knowledge Base, and MCP Ga
    - Deploy gateway with Cognito auth
    - See `mcp-gateway/README.md`
 
+8. **AgentCore Memory** (`shared-infra/memory/`)
+   - Create memory resource with built-in long-term strategies
+   - See `shared-infra/README.md` → [AgentCore Memory](#agentcore-memory)
+
 ### Quick Access
 
 ```bash
@@ -96,7 +100,8 @@ customer-support-demo/
 │   ├── README.md
 │   ├── bedrock-kb/                  # S3 bucket + OpenSearch (deploy 1st)
 │   ├── eks-cluster/                 # Kubernetes cluster (deploy 2nd)
-│   └── cloudfront/                  # HTTPS distribution (deploy 3rd)
+│   ├── cloudfront/                  # HTTPS distribution (deploy 3rd)
+│   └── memory/                      # AgentCore Memory (deploy 8th)
 │
 ├── order-management-api/            # Phase 2: Application services
 │   ├── README.md
@@ -131,6 +136,7 @@ customer-support-demo/
 - **Bedrock KB**: `shared-infra/bedrock-kb/README.md` - S3 bucket and OpenSearch setup
 - **EKS Cluster**: See [EKS Cluster section](shared-infra/README.md#eks-cluster)
 - **CloudFront**: See [CloudFront section](shared-infra/README.md#cloudfront-distribution)
+- **AgentCore Memory**: See [AgentCore Memory section](shared-infra/README.md#agentcore-memory)
 
 ### Application Services
 - **Order Management API**: `order-management-api/README.md` - Order data REST API
@@ -139,6 +145,7 @@ customer-support-demo/
 ### AI/ML Services
 - **Product Knowledge Base**: `product-knowledge-base/README.md` - Bedrock KB deployment
 - **MCP Gateway**: `mcp-gateway/README.md` - AI agent gateway with all services
+- **AgentCore Memory**: See [AgentCore Memory section](shared-infra/README.md#agentcore-memory) - Long-term memory for AI agents
 
 ## Component Dependencies
 

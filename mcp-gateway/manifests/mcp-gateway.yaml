@@ -137,7 +137,9 @@ Resources:
                   - bedrock:RetrieveAndGenerate
                   - bedrock:GetKnowledgeBase
                   - bedrock:InvokeModel
-                Resource: !Sub 'arn:aws:bedrock:${Region}:${AWS::AccountId}:knowledge-base/${ProductKnowledgeBaseId}'
+                # Allow access to all knowledge bases in the account
+                # This is needed because the Gateway may need to access different KBs
+                Resource: !Sub 'arn:aws:bedrock:${Region}:${AWS::AccountId}:knowledge-base/*'
               - Effect: Allow
                 Action:
                   - bedrock:GetFoundationModel

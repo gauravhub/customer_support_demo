@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AgentCore Memory resource with built-in long-term strategies'
+
+Parameters:
+  MemoryName:
+    Type: String
+    Default: customer_support_agent
+    Description: 'Name for the AgentCore Memory resource'
+  
+  EventExpiryDays:
+    Type: Number
+    Default: 90
+    Description: 'Number of days to retain events in short-term memory'
+    MinValue: 7
+    MaxValue: 365
+
+Resources:
+  AgentCoreMemory:
+    Type: AWS::BedrockAgentCore::Memory
+    Properties:
+      Name: !Ref MemoryName
+      EventExpiryDuration: !Ref EventExpiryDays
+      Description: 'Customer Support AgentCore Memory with built-in long-term strategies'
+      MemoryStrategies:
+        # Semantic Memory Strategy
+        - SemanticMemoryStrategy:
+            Name: semantic
+            Description: 'Extracts meaningful facts and knowledge from conversations'
+            Namespaces:
+              - '/strategy/semantic/actor/{actorId}'
+        
+        # User Preference Memory Strategy
+        - UserPreferenceMemoryStrategy:
+            Name: preferences
+            Description: 'Extracts user preferences and behavioral patterns'
+            Namespaces:
+              - '/strategy/preferences/actor/{actorId}'
+        
+        # Summary Memory Strategy
+        - SummaryMemoryStrategy:
+            Name: summary
+            Description: 'Creates summaries of conversations'
+            Namespaces:
+              - '/strategy/summary/actor/{actorId}/session/{sessionId}'
+        
+        # Episodic Memory Strategy
+        - EpisodicMemoryStrategy:
+            Name: episodic
+            Description: 'Extracts episodes and generates reflections across episodes'
+            Namespaces:
+              - '/strategy/episodic/actor/{actorId}/session/{sessionId}'
+            ReflectionConfiguration:
+              Namespaces:
+                - '/strategy/episodic/actor/{actorId}'
+      Tags:
+        Purpose: AgentCoreMemory
+        Environment: demo
+
+Metadata:
+  Strategies:
+    Semantic:
+      Type: built-in
+      Description: 'Extracts meaningful facts and knowledge from conversations'
+      Namespaces: ['/strategy/semantic/actor/{actorId}']
+    
+    UserPreference:
+      Type: built-in
+      Description: 'Extracts user preferences and behavioral patterns'
+      Namespaces: ['/strategy/preferences/actor/{actorId}']
+    
+    Summary:
+      Type: built-in
+      Description: 'Creates summaries of conversations'
+      Namespaces: ['/strategy/summary/actor/{actorId}/session/{sessionId}']
+    
+    Episodic:
+      Type: built-in
+      Description: 'Extracts episodes and generates reflections across episodes'
+      EpisodeNamespaces: ['/strategy/episodic/actor/{actorId}/session/{sessionId}']
+      ReflectionNamespaces: ['/strategy/episodic/actor/{actorId}']
+
+Outputs:
+  MemoryId:
+    Description: 'AgentCore Memory resource ID'
+    Value: !GetAtt AgentCoreMemory.MemoryId
+    Export:
+      Name: !Sub '${AWS::StackName}-MemoryId'
+  
+  MemoryName:
+    Description: 'AgentCore Memory resource name'
+    Value: !Ref MemoryName
+    Export:
+      Name: !Sub '${AWS::StackName}-MemoryName'
+  
+  MemoryArn:
+    Description: 'AgentCore Memory resource ARN'
+    Value: !GetAtt AgentCoreMemory.MemoryArn
+    Export:
+      Name: !Sub '${AWS::StackName}-MemoryArn'
+  
+  MemoryStatus:
+    Description: 'AgentCore Memory resource status'
+    Value: !GetAtt AgentCoreMemory.Status

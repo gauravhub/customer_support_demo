@@ -1,5 +1,0 @@
-[workspace]
-members = [
-    "issue-management-api",
-    "order-management-api",
-]

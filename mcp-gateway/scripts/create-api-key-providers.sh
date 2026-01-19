@@ -19,23 +19,54 @@ echo "Region: $REGION"
 echo ""
 
 # API Keys (from the APIs)
-# IMPORTANT: Set your own API keys via environment variables
-# Do not use the example keys shown in documentation in production
-ORDER_MANAGEMENT_API_KEY="${ORDER_MANAGEMENT_API_KEY:-}"
-ISSUE_MANAGEMENT_API_KEY="${ISSUE_MANAGEMENT_API_KEY:-}"
+# Script reads from api_keys.json files in the API directories
 
+# Paths to API key files
+ORDER_MANAGEMENT_API_KEYS_FILE="$PROJECT_DIR/../order-management-api/data/api_keys.json"
+ISSUE_MANAGEMENT_API_KEYS_FILE="$PROJECT_DIR/../issue-management-api/data/api_keys.json"
+
+# Function to extract first API key from JSON array file
+extract_api_key() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        # Extract first string from JSON array using grep and sed
+        # Handles format: ["key"] or [ "key" ]
+        grep -o '"[^"]*"' "$file" | head -n1 | sed 's/"//g'
+    fi
+}
+
+# Read API keys from files
+ORDER_MANAGEMENT_API_KEY=$(extract_api_key "$ORDER_MANAGEMENT_API_KEYS_FILE")
+ISSUE_MANAGEMENT_API_KEY=$(extract_api_key "$ISSUE_MANAGEMENT_API_KEYS_FILE")
+
+# Validate that API keys are available
 if [ -z "$ORDER_MANAGEMENT_API_KEY" ] || [ -z "$ISSUE_MANAGEMENT_API_KEY" ]; then
-    echo "Error: API keys must be set via environment variables"
+    echo "Error: API keys not found in JSON files"
     echo ""
-    echo "Usage:"
-    echo "  export ORDER_MANAGEMENT_API_KEY=your-base64-encoded-key"
-    echo "  export ISSUE_MANAGEMENT_API_KEY=your-base64-encoded-key"
-    echo "  ./create-api-key-providers.sh"
+    echo "Required JSON files:"
+    echo "  $ORDER_MANAGEMENT_API_KEYS_FILE"
+    echo "  $ISSUE_MANAGEMENT_API_KEYS_FILE"
     echo ""
-    echo "To generate a random API key (example):"
-    echo "  openssl rand -base64 32"
+    if [ ! -f "$ORDER_MANAGEMENT_API_KEYS_FILE" ]; then
+        echo "  ✗ Order Management API keys file not found"
+    elif [ -z "$ORDER_MANAGEMENT_API_KEY" ]; then
+        echo "  ✗ Order Management API keys file is empty or invalid"
+    fi
+    if [ ! -f "$ISSUE_MANAGEMENT_API_KEYS_FILE" ]; then
+        echo "  ✗ Issue Management API keys file not found"
+    elif [ -z "$ISSUE_MANAGEMENT_API_KEY" ]; then
+        echo "  ✗ Issue Management API keys file is empty or invalid"
+    fi
+    echo ""
+    echo "Expected JSON format: [\"your-base64-encoded-key\"]"
     exit 1
 fi
+
+# Show source of API keys
+echo "API Keys loaded from JSON files:"
+echo "  Order Management: $ORDER_MANAGEMENT_API_KEYS_FILE"
+echo "  Issue Management: $ISSUE_MANAGEMENT_API_KEYS_FILE"
+echo ""
 
 # Provider names
 ORDER_PROVIDER_NAME="order-management-api-key-provider"

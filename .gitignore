@@ -141,8 +141,8 @@ kubeconfig
 # Project specific
 .cursor/
 *.plan.md
+customer_support_agent_old/
 
-# Keep these (uncomment if you want to ignore them)
-# uv.lock  # Usually keep this for reproducibility
-# data/*.json  # Keep data files, but ignore temp database directory
-
+# LangGraph
+**/.langgraph_api/
+.langgraph_api/

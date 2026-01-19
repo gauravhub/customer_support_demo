@@ -7,106 +7,13 @@ Tests authentication, tool listing, and invocation of all tools
 import json
 import sys
 import urllib.request
-import urllib.parse
-import subprocess
 import os
-import base64
+
+# Import authentication functions from mcp_auth module
+from mcp_auth import get_access_token, get_stack_output
 
 REGION = os.environ.get('REGION', 'us-west-2')
 STACK_NAME = os.environ.get('STACK_NAME', 'customer-support-demo-mcp-gateway')
-
-def get_stack_output(key):
-    """Get a CloudFormation stack output value"""
-    result = subprocess.run(
-        ['aws', 'cloudformation', 'describe-stacks',
-         '--stack-name', STACK_NAME,
-         '--region', REGION,
-         '--query', f'Stacks[0].Outputs[?OutputKey==`{key}`].OutputValue',
-         '--output', 'text'],
-        capture_output=True,
-        text=True
-    )
-    return result.stdout.strip()
-
-def decode_jwt_payload(token):
-    """Decode JWT token payload for debugging"""
-    try:
-        payload = token.split('.')[1]
-        # Add padding if needed
-        padding = 4 - len(payload) % 4
-        if padding != 4:
-            payload += '=' * padding
-        decoded = base64.b64decode(payload)
-        return json.loads(decoded)
-    except Exception as e:
-        return {'error': str(e)}
-
-def get_access_token():
-    """Get access token from Cognito using client_credentials flow"""
-    print("\n" + "=" * 60)
-    print("Step 1: Authenticate with Cognito")
-    print("=" * 60)
-    
-    client_id = get_stack_output('CognitoUserPoolClientId')
-    client_secret = get_stack_output('CognitoUserPoolClientSecret')
-    token_endpoint = get_stack_output('CognitoTokenEndpoint')
-    resource_server_id = get_stack_output('CognitoResourceServerIdentifier')
-    
-    if not resource_server_id:
-        resource_server_id = STACK_NAME
-    
-    # Full scope format: {resource_server_identifier}/gateway.access
-    scope = f'{resource_server_id}/gateway.access'
-    
-    print(f"Token Endpoint: {token_endpoint}")
-    print(f"Client ID: {client_id}")
-    print(f"Scope: {scope}")
-    
-    # Use basic auth
-    auth_string = f"{client_id}:{client_secret}"
-    auth_bytes = auth_string.encode('utf-8')
-    auth_b64 = base64.b64encode(auth_bytes).decode('utf-8')
-    
-    data = urllib.parse.urlencode({
-        'grant_type': 'client_credentials',
-        'scope': scope
-    }).encode('utf-8')
-    
-    req = urllib.request.Request(
-        token_endpoint,
-        data=data,
-        headers={
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': f'Basic {auth_b64}'
-        }
-    )
-    
-    try:
-        with urllib.request.urlopen(req) as response:
-            token_data = json.loads(response.read().decode('utf-8'))
-            access_token = token_data['access_token']
-            print("✓ Access token obtained")
-            
-            # Decode and show token claims for debugging
-            claims = decode_jwt_payload(access_token)
-            print("\nToken Claims:")
-            print(f"  Expires: {claims.get('exp', 'N/A')}")
-            print(f"  Scope: {claims.get('scope', 'N/A')}")
-            print(f"  Client ID: {claims.get('client_id', 'N/A')}")
-            
-            return access_token
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode('utf-8')
-        print(f"✗ Error getting token (HTTP {e.code}):")
-        try:
-            error_data = json.loads(error_body)
-            print(json.dumps(error_data, indent=2))
-        except:
-            print(error_body)
-        sys.exit(1)
-    except Exception as e:
-        print(f"✗ Error getting token: {e}")
-        sys.exit(1)
 
 def list_tools(gateway_url, access_token):
     """Get list of available tools"""
@@ -327,11 +234,11 @@ def main():
     
     # Get configuration
     print("\nGetting configuration from CloudFormation...")
-    gateway_url = get_stack_output('GatewayUrl')
+    gateway_url = get_stack_output('GatewayUrl', STACK_NAME, REGION)
     print(f"Gateway URL: {gateway_url}")
     
-    # Get access token
-    access_token = get_access_token()
+    # Get access token (with verbose output)
+    access_token = get_access_token(STACK_NAME, REGION, verbose=True)
     
     # List tools
     tools = list_tools(gateway_url, access_token)
