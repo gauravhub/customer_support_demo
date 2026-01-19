@@ -85,6 +85,12 @@ class Configuration(BaseModel):
         default=None,
         description="Product Knowledge Base ID for query_products_kb tool. Set via PRODUCT_KB_ID environment variable."
     )
+
+    # AgentCore Memory configuration
+    agentcore_memory_id: Optional[str] = Field(
+        default=None,
+        description="AgentCore Memory ID for long-term persistence. Set via AGENTCORE_MEMORY_ID environment variable."
+    )
     
     @classmethod
     def from_environment(cls) -> "Configuration":

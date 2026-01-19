@@ -95,6 +95,20 @@ class OAuthTokenAuth(httpx.Auth):
         Raises:
             RuntimeError: If token acquisition fails
         """
+        if not self.config.mcp_cognito_token_endpoint:
+            raise RuntimeError(
+                "MCP_COGNITO_TOKEN_ENDPOINT is not configured. "
+                "Set the environment variable with the Cognito token endpoint URL."
+            )
+        
+        # Validate URL format
+        endpoint = self.config.mcp_cognito_token_endpoint
+        if not endpoint.startswith(('http://', 'https://')):
+            raise RuntimeError(
+                f"Invalid MCP_COGNITO_TOKEN_ENDPOINT format: {endpoint}\n"
+                f"Expected format: https://<cognito-domain>.auth.<region>.amazoncognito.com/oauth2/token"
+            )
+        
         # Full scope format: {resource_server_identifier}/gateway.access
         scope = f'{self.config.mcp_resource_server_id}/gateway.access'
         
@@ -118,7 +132,8 @@ class OAuthTokenAuth(httpx.Auth):
         )
         
         try:
-            with urllib.request.urlopen(req) as response:
+            # Add timeout to prevent hanging (10 seconds)
+            with urllib.request.urlopen(req, timeout=10) as response:
                 token_data = json.loads(response.read().decode('utf-8'))
                 access_token = token_data.get('access_token')
                 
@@ -133,9 +148,30 @@ class OAuthTokenAuth(httpx.Auth):
                 
         except urllib.error.HTTPError as e:
             error_body = e.read().decode('utf-8')
-            raise RuntimeError(f"Failed to get access token (HTTP {e.code}): {error_body}")
+            raise RuntimeError(
+                f"Failed to get access token from {self.config.mcp_cognito_token_endpoint} "
+                f"(HTTP {e.code}): {error_body}"
+            )
+        except urllib.error.URLError as e:
+            error_msg = str(e)
+            if "Name or service not known" in error_msg or "[Errno -2]" in error_msg:
+                raise RuntimeError(
+                    f"DNS lookup failed for Cognito token endpoint: {self.config.mcp_cognito_token_endpoint}\n"
+                    f"This usually means:\n"
+                    f"  1. The Cognito domain does not exist or is incorrect\n"
+                    f"  2. Network connectivity issues\n"
+                    f"  3. DNS resolution problems\n"
+                    f"Please verify MCP_COGNITO_TOKEN_ENDPOINT is set to a valid Cognito domain.\n"
+                    f"Expected format: https://<cognito-domain>.auth.<region>.amazoncognito.com/oauth2/token"
+                ) from e
+            else:
+                raise RuntimeError(
+                    f"Network error connecting to {self.config.mcp_cognito_token_endpoint}: {error_msg}"
+                ) from e
         except Exception as e:
-            raise RuntimeError(f"Failed to get access token: {str(e)}") from e
+            raise RuntimeError(
+                f"Failed to get access token from {self.config.mcp_cognito_token_endpoint}: {str(e)}"
+            ) from e
     
     def auth_flow(self, request: httpx.Request) -> httpx.Request:
         """httpx.Auth interface: inject Authorization header with fresh token.
