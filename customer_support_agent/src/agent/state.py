@@ -32,8 +32,12 @@ class CustomerSupportState(MessagesState):
     - response: Generated response to customer (written back to Jira)
     - assignee: Current assignee of the ticket (email or user ID, can be updated during workflow)
     - reporter: Reporter email address (person who created the issue)
+    - customer_email: Customer email address (collected at start of conversation)
+    - customer_name: Customer name (collected at start of conversation)
     - transaction_id: Extracted transaction ID (from ticket content)
     - order_no: Extracted order number (from ticket content)
+    - isInConversationMode: Flag indicating conversation mode is active
+    - initiateIssueAnalysis: Flag to initiate issue analysis phase
     """
     # Jira Ticket fields (grouped conceptually)
     # These are Optional because they may not be available until ticket is fetched or created
@@ -53,3 +57,7 @@ class CustomerSupportState(MessagesState):
     # Extracted workflow fields (from ticket content)
     transaction_id: Optional[str] = None
     order_no: Optional[str] = None
+    
+    # Flow control fields (control conversation workflow)
+    isInConversationMode: Optional[bool] = False  # Flag indicating conversation mode is active
+    initiateIssueAnalysis: Optional[bool] = False  # Flag to initiate issue analysis phase

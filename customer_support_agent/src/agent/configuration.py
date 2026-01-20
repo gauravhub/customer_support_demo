@@ -28,7 +28,7 @@ class Configuration(BaseModel):
     
     # Bedrock model configuration
     text_model: str = Field(
-        default="us.mistral.mistral-large-2407-v1:0",
+        default="mistral.mistral-large-2407-v1:0",
         description="Bedrock model for text processing"
     )
     vision_model: str = Field(
@@ -84,6 +84,16 @@ class Configuration(BaseModel):
     product_kb_id: Optional[str] = Field(
         default=None,
         description="Product Knowledge Base ID for query_products_kb tool. Set via PRODUCT_KB_ID environment variable."
+    )
+    
+    # JIRA configuration
+    jira_assignee_username: Optional[str] = Field(
+        default=None,
+        description="JIRA assignee username/email for assigning issues. Set via JIRA_ASSIGNEE_USERNAME environment variable."
+    )
+    jira_category_field_id: Optional[str] = Field(
+        default=None,
+        description="JIRA custom field ID for category (without 'customfield_' prefix). Set via JIRA_CATEGORY_FIELD_ID environment variable."
     )
 
     # AgentCore Memory configuration

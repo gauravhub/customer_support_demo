@@ -334,6 +334,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },
+    { name = "httpx" },
     { name = "langchain" },
     { name = "langchain-aws" },
     { name = "langchain-core" },
@@ -356,6 +357,7 @@ ui = [
 requires-dist = [
     { name = "boto3", specifier = ">=1.34.0" },
     { name = "cognitojwt", marker = "extra == 'ui'", specifier = ">=1.4.1" },
+    { name = "httpx", specifier = ">=0.28.0" },
     { name = "langchain", specifier = ">=1.0.0" },
     { name = "langchain-aws", specifier = ">=1.0.0" },
     { name = "langchain-core", specifier = ">=1.0.0" },

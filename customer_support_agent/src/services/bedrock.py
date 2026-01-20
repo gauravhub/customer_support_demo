@@ -70,3 +70,52 @@ class BedrockService:
             }
         
         return ChatBedrockConverse(**llm_params)
+    
+    def get_text_llm(self) -> ChatBedrockConverse:
+        """Get text LLM for text processing with guardrails if configured.
+        
+        Uses guardrails if guardrail_id is configured, otherwise returns plain LLM.
+        For customer support, guardrails are recommended for content safety.
+        
+        Note:
+            ChatBedrockConverse uses boto3, which automatically picks up AWS credentials
+            from environment variables, AWS credentials file, or IAM role.
+            Region is explicitly passed via region_name parameter.
+        
+        Returns:
+            ChatBedrockConverse instance configured for text processing
+        """
+        llm_params = {
+            "model": self.config.text_model,
+            "temperature": self.config.temperature,
+            "max_tokens": self.config.max_tokens,
+            "region_name": self.aws_region,
+        }
+        
+        # Add guardrails if configured
+        if self.guardrail_id:
+            llm_params["guardrails"] = {
+                "guardrailIdentifier": self.guardrail_id,
+                "guardrailVersion": self.guardrail_version,
+                "trace": "enabled"
+            }
+        
+        return ChatBedrockConverse(**llm_params)
+    
+    def get_vision_llm(self) -> ChatBedrockConverse:
+        """Get vision LLM for image processing.
+        
+        Note:
+            ChatBedrockConverse uses boto3, which automatically picks up AWS credentials
+            from environment variables, AWS credentials file, or IAM role.
+            Region is explicitly passed via region_name parameter.
+        
+        Returns:
+            ChatBedrockConverse instance configured for vision/image processing
+        """
+        return ChatBedrockConverse(
+            model=self.config.vision_model,
+            temperature=self.config.temperature,
+            max_tokens=self.config.max_tokens,
+            region_name=self.aws_region,
+        )
