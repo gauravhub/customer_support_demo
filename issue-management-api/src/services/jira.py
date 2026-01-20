@@ -97,6 +97,36 @@ class JiraService:
             "project": issue.fields.project.key if issue.fields.project else None,
         }
         
+        # Add custom fields: Category and Response
+        if self.config.jira_category_field_id:
+            category_field_name = f"customfield_{self.config.jira_category_field_id}"
+            category_value = getattr(issue.fields, category_field_name, None)
+            # Handle case where custom field might be an object with a 'value' attribute
+            if category_value and hasattr(category_value, 'value'):
+                issue_dict["category"] = category_value.value
+            elif category_value:
+                issue_dict["category"] = category_value
+        
+        if self.config.jira_response_field_id:
+            response_field_name = f"customfield_{self.config.jira_response_field_id}"
+            response_value = getattr(issue.fields, response_field_name, None)
+            # Response field is typically a string, but handle object case too
+            if response_value and hasattr(response_value, 'value'):
+                issue_dict["response"] = response_value.value
+            elif response_value:
+                issue_dict["response"] = response_value
+        
+        # Add attachments array (list of download URLs as strings)
+        attachments = []
+        if hasattr(issue.fields, 'attachment') and issue.fields.attachment:
+            for attachment in issue.fields.attachment:
+                # Get download URL (content field)
+                attachment_content = getattr(attachment, 'content', getattr(attachment, 'self', None))
+                if attachment_content:
+                    attachments.append(attachment_content)
+        
+        issue_dict["attachments"] = attachments
+        
         return issue_dict
     
     def get_attachments(self, issue_key: str) -> list[Dict[str, Any]]:
@@ -181,7 +211,7 @@ class JiraService:
         
         Args:
             issue_key: JIRA issue key (e.g., "AS-5")
-            field_name: Field name (e.g., "customfield_10071")
+            field_name: Field name (e.g., "customfield_10071", "assignee", "response", or "category")
             value: Value to set
             
         Returns:
@@ -190,9 +220,116 @@ class JiraService:
         try:
             jira = self._get_client()
             issue = jira.issue(issue_key)
-            issue.update(fields={field_name: value})
+            
+            # Special handling for assignee field
+            # Use JIRA's assign_issue method which handles user lookup automatically
+            if field_name == "assignee":
+                try:
+                    # Use JIRA's built-in assign_issue method which handles user lookup
+                    # This method accepts username, email, or accountId and handles conversion
+                    jira.assign_issue(issue_key, value)
+                    print(f"Successfully updated assignee field for issue {issue_key} to {value}")
+                except Exception as assign_error:
+                    # If assign_issue fails, try manual assignment as fallback
+                    print(f"Warning: assign_issue failed, trying manual assignment: {str(assign_error)}")
+                    try:
+                        # Try to find user by email/username
+                        user = jira.user(value)
+                        # Use accountId if available (for JIRA Cloud), otherwise use emailAddress
+                        if hasattr(user, 'accountId') and user.accountId:
+                            assignee_value = {"accountId": user.accountId}
+                        elif hasattr(user, 'emailAddress') and user.emailAddress:
+                            assignee_value = {"emailAddress": user.emailAddress}
+                        else:
+                            # Fallback: try using the value directly as accountId
+                            assignee_value = {"accountId": value}
+                        
+                        issue.update(fields={"assignee": assignee_value})
+                        print(f"Successfully updated assignee field for issue {issue_key} to {value} (via manual assignment)")
+                    except Exception as manual_error:
+                        error_msg = f"Error assigning issue {issue_key} to {value}: {str(manual_error)}"
+                        print(f"ERROR: {error_msg}")
+                        raise Exception(error_msg) from manual_error
+            
+            # Special handling for response custom field
+            # If field_name is "response", convert to custom field ID
+            elif field_name == "response":
+                if not self.config.jira_response_field_id:
+                    print(f"ERROR: jira_response_field_id not configured, cannot update response field")
+                    return False
+                
+                response_field_name = f"customfield_{self.config.jira_response_field_id}"
+                # Custom fields can be updated directly with the value
+                # For text fields, value is a string
+                issue.update(fields={response_field_name: value})
+                print(f"Successfully updated response field (customfield_{self.config.jira_response_field_id}) for issue {issue_key}")
+            
+            # Special handling for category custom field
+            # If field_name is "category", convert to custom field ID
+            elif field_name == "category":
+                if not self.config.jira_category_field_id:
+                    print(f"ERROR: jira_category_field_id not configured, cannot update category field")
+                    return False
+                
+                category_field_name = f"customfield_{self.config.jira_category_field_id}"
+                # Custom fields can be updated directly with the value
+                # For text fields, value is a string
+                issue.update(fields={category_field_name: value})
+                print(f"Successfully updated category field (customfield_{self.config.jira_category_field_id}) for issue {issue_key}")
+            
+            else:
+                # For other fields (including custom fields), use value directly
+                issue.update(fields={field_name: value})
+                print(f"Successfully updated field {field_name} for issue {issue_key}")
+            
             return True
         except Exception as e:
-            print(f"Error updating field {field_name} for issue {issue_key}: {str(e)}")
+            print(f"ERROR: Error updating field {field_name} for issue {issue_key}: {str(e)}")
+            import traceback
+            print(f"ERROR: Traceback:\n{traceback.format_exc()}")
             return False
+    
+    def download_attachment(self, attachment_id: str) -> tuple[bytes, str, str]:
+        """Download an attachment from JIRA using authenticated session.
+        
+        Uses the JIRA package's session for authentication to download the attachment.
+        
+        Args:
+            attachment_id: JIRA attachment ID (e.g., "10036")
+            
+        Returns:
+            Tuple of (file_content: bytes, filename: str, content_type: str)
+            
+        Raises:
+            Exception: If download fails or attachment not found
+        """
+        try:
+            jira = self._get_client()
+            
+            # Get attachment object
+            attachment = jira.attachment(attachment_id)
+            
+            # Get attachment attributes
+            attachment_url = getattr(attachment, 'content', getattr(attachment, 'self', None))
+            attachment_filename = getattr(attachment, 'filename', getattr(attachment, 'name', 'attachment'))
+            attachment_mimeType = getattr(attachment, 'mimeType', 'application/octet-stream')
+            
+            if not attachment_url:
+                raise ValueError("Could not find attachment URL in attachment object")
+            
+            # Use the JIRA client's session to download the attachment
+            # This ensures proper authentication and handles API versioning
+            response = jira._session.get(attachment_url, stream=True)
+            response.raise_for_status()
+            
+            # Read the file content
+            file_content = b""
+            for chunk in response.iter_content(chunk_size=1024):
+                file_content += chunk
+            
+            return (file_content, attachment_filename, attachment_mimeType)
+        except Exception as e:
+            error_msg = f"Error downloading attachment {attachment_id}: {str(e)}"
+            print(f"ERROR: {error_msg}")
+            raise Exception(error_msg) from e
     

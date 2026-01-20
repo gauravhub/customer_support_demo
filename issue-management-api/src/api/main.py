@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, status, Body
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, status, Body, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from src.config import Configuration
@@ -209,6 +210,53 @@ async def update_issue_field(
         return {"error": "Failed to update field"}
     except Exception as e:
         return {"error": f"Could not update field: {str(e)}"}
+
+
+@app.get("/api/attachment/{attachment_id}")
+async def download_attachment(
+    attachment_id: str,
+    _api_key: str = Depends(verify_api_key)  # Verified but not used in function
+) -> dict:
+    """Download an attachment from JIRA.
+    
+    Uses authenticated JIRA session to download the attachment file.
+    Returns base64-encoded content for MCP compatibility.
+    
+    Args:
+        attachment_id: JIRA attachment ID (e.g., "10036")
+    
+    Returns:
+        Dictionary with base64-encoded file content, filename, and content_type
+    
+    Raises:
+        HTTPException: If attachment not found or download fails
+    """
+    import base64
+    
+    if not attachment_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="attachment_id is required"
+        )
+    
+    try:
+        file_content, filename, content_type = jira_service.download_attachment(attachment_id)
+        
+        # Encode file content as base64 for JSON response (MCP compatibility)
+        file_content_b64 = base64.b64encode(file_content).decode('utf-8')
+        
+        return {
+            "attachment_id": attachment_id,
+            "filename": filename,
+            "content_type": content_type,
+            "content_base64": file_content_b64,
+            "size": len(file_content)
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Could not download attachment: {str(e)}"
+        )
 
 
 @app.get("/")

@@ -210,7 +210,7 @@ Resources:
     Properties:
       Name: issue-management-api
       GatewayIdentifier: !Ref AgentCoreGateway
-      Description: 'Issue Management API - Manage JIRA issues, get fields, update fields, get attachments'
+      Description: 'Issue Management API - Manage JIRA issues, get fields, update fields, get attachments, download attachments'
       CredentialProviderConfigurations:
         - CredentialProviderType: API_KEY
           CredentialProvider:

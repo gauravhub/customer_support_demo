@@ -2,7 +2,7 @@
     "openapi": "3.1.0",
     "info": {
         "title": "Issue Management API",
-        "description": "REST API for managing JIRA issues",
+        "description": "REST API for managing JIRA issues (X-API-Key header required)",
         "version": "0.1.0"
     },
     "servers": [
@@ -24,10 +24,8 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "description": "JIRA issue key (e.g., \"AS-5\", \"PROJ-123\")",
                             "title": "Issue Key"
-                        },
-                        "description": "JIRA issue key"
+                        }
                     }
                 ],
                 "responses": {
@@ -37,7 +35,8 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object",
-                                    "additionalProperties": true
+                                    "additionalProperties": true,
+                                    "title": "Response Get Issue Api Issue  Issue Key  Get"
                                 }
                             }
                         }
@@ -67,10 +66,8 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "description": "JIRA issue key (e.g., \"AS-5\")",
                             "title": "Issue Key"
-                        },
-                        "description": "JIRA issue key"
+                        }
                     },
                     {
                         "name": "field_name",
@@ -81,7 +78,7 @@
                             "description": "Field name (e.g., 'reporter', 'customfield_10071')",
                             "title": "Field Name"
                         },
-                        "description": "Field name to retrieve"
+                        "description": "Field name (e.g., 'reporter', 'customfield_10071')"
                     }
                 ],
                 "responses": {
@@ -91,7 +88,8 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object",
-                                    "additionalProperties": true
+                                    "additionalProperties": true,
+                                    "title": "Response Get Issue Field Api Issue  Issue Key  Field Get"
                                 }
                             }
                         }
@@ -119,10 +117,8 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "description": "JIRA issue key (e.g., \"AS-5\")",
                             "title": "Issue Key"
-                        },
-                        "description": "JIRA issue key"
+                        }
                     }
                 ],
                 "requestBody": {
@@ -142,7 +138,8 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object",
-                                    "additionalProperties": true
+                                    "additionalProperties": true,
+                                    "title": "Response Update Issue Field Api Issue  Issue Key  Field Put"
                                 }
                             }
                         }
@@ -172,10 +169,8 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "description": "JIRA issue key (e.g., \"AS-5\")",
                             "title": "Issue Key"
-                        },
-                        "description": "JIRA issue key"
+                        }
                     }
                 ],
                 "responses": {
@@ -185,7 +180,50 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object",
-                                    "additionalProperties": true
+                                    "additionalProperties": true,
+                                    "title": "Response Get Issue Attachments Api Issue  Issue Key  Attachments Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/attachment/{attachment_id}": {
+            "get": {
+                "summary": "Download Attachment",
+                "description": "Download an attachment from JIRA.\n\nUses authenticated JIRA session to download the attachment file.\nReturns base64-encoded content for MCP compatibility.\n\nArgs:\n    attachment_id: JIRA attachment ID (e.g., \"10036\")\n\nReturns:\n    Dictionary with base64-encoded file content, filename, and content_type\n\nRaises:\n    HTTPException: If attachment not found or download fails",
+                "operationId": "download_attachment_api_attachment__attachment_id__get",
+                "parameters": [
+                    {
+                        "name": "attachment_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Attachment Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Download Attachment Api Attachment  Attachment Id  Get"
                                 }
                             }
                         }
@@ -206,51 +244,41 @@
     },
     "components": {
         "schemas": {
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
             "UpdateFieldRequest": {
-                "title": "UpdateFieldRequest",
+                "properties": {
+                    "field_name": {
+                        "type": "string",
+                        "title": "Field Name"
+                    },
+                    "value": {
+                        "type": "string",
+                        "title": "Value"
+                    }
+                },
+                "type": "object",
                 "required": [
                     "field_name",
                     "value"
                 ],
-                "type": "object",
-                "properties": {
-                    "field_name": {
-                        "title": "Field Name",
-                        "type": "string",
-                        "description": "Field name to update"
-                    },
-                    "value": {
-                        "title": "Value",
-                        "type": "string",
-                        "description": "New value for the field"
-                    }
-                }
-            },
-            "HTTPValidationError": {
-                "title": "HTTPValidationError",
-                "type": "object",
-                "properties": {
-                    "detail": {
-                        "title": "Detail",
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/ValidationError"
-                        }
-                    }
-                }
+                "title": "UpdateFieldRequest",
+                "description": "Request model for updating an issue field."
             },
             "ValidationError": {
-                "title": "ValidationError",
-                "required": [
-                    "loc",
-                    "msg",
-                    "type"
-                ],
-                "type": "object",
                 "properties": {
                     "loc": {
-                        "title": "Location",
-                        "type": "array",
                         "items": {
                             "anyOf": [
                                 {
@@ -260,17 +288,26 @@
                                     "type": "integer"
                                 }
                             ]
-                        }
+                        },
+                        "type": "array",
+                        "title": "Location"
                     },
                     "msg": {
-                        "title": "Message",
-                        "type": "string"
+                        "type": "string",
+                        "title": "Message"
                     },
                     "type": {
-                        "title": "Error Type",
-                        "type": "string"
+                        "type": "string",
+                        "title": "Error Type"
                     }
-                }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
             }
         }
     }
