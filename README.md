@@ -71,6 +71,11 @@ An AI-powered customer support system with REST APIs, Knowledge Base, and MCP Ga
    - Create memory resource with built-in long-term strategies
    - See `shared-infra/README.md` → [AgentCore Memory](#agentcore-memory)
 
+9. **Customer Support Agent** (`customer-support-agent/`)
+   - Configure environment variables
+   - Deploy agent to LangGraph Cloud or run locally with LangGraph Studio
+   - See `customer-support-agent/README.md`
+
 ### Quick Access
 
 ```bash
@@ -122,11 +127,17 @@ customer-support-demo/
 │   ├── scripts/                     # Deployment scripts
 │   └── src/                         # Upload utilities
 │
-└── mcp-gateway/                     # Phase 3: AI/ML services (deploy last)
+├── mcp-gateway/                     # Phase 3: AI/ML services (deploy last)
+│   ├── README.md
+│   ├── manifests/                   # CloudFormation template
+│   ├── scripts/                     # Deployment + test scripts
+│   └── schemas/                     # API schemas (generated)
+│
+└── customer-support-agent/          # Phase 3: AI/ML services (deploy last)
     ├── README.md
-    ├── manifests/                   # CloudFormation template
-    ├── scripts/                     # Deployment + test scripts
-    └── schemas/                     # API schemas (generated)
+    ├── src/                         # Agent source code
+    ├── langgraph.json               # LangGraph configuration
+    └── pyproject.toml               # Python dependencies
 ```
 
 ## Documentation
@@ -146,6 +157,7 @@ customer-support-demo/
 - **Product Knowledge Base**: `product-knowledge-base/README.md` - Bedrock KB deployment
 - **MCP Gateway**: `mcp-gateway/README.md` - AI agent gateway with all services
 - **AgentCore Memory**: See [AgentCore Memory section](shared-infra/README.md#agentcore-memory) - Long-term memory for AI agents
+- **Customer Support Agent**: `customer-support-agent/README.md` - LangGraph-based AI agent for customer support automation
 
 ## Component Dependencies
 
@@ -168,4 +180,9 @@ mcp-gateway (depends on everything)
     ├─→ order-management-api (OpenAPI target)
     ├─→ issue-management-api (OpenAPI target)
     └─→ product-knowledge-base (Smithy target)
+
+customer-support-agent (depends on everything)
+    ├─→ mcp-gateway (tool access)
+    ├─→ agentcore-memory (context retrieval and persistence)
+    └─→ product-knowledge-base (via MCP Gateway)
 ```
