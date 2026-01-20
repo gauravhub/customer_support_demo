@@ -1,5 +1,6 @@
 """Persist the latest conversation turn to AgentCore Memory."""
 
+import asyncio
 import json
 import logging
 import os
@@ -49,7 +50,94 @@ class AgentCoreMemoryService:
 
         self.client = boto3.client("bedrock-agentcore", region_name=self.aws_region)
 
-    def create_event(
+    async def retrieve_memory(
+        self,
+        actor_id: str,
+        query: str,
+        memory_types: Optional[List[str]] = None,
+        max_results: int = 10,
+    ) -> Dict[str, Any]:
+        """Retrieve memories from AgentCore Memory.
+        
+        Args:
+            actor_id: Actor ID to retrieve memories for
+            query: Query string to search for in memories
+            memory_types: List of memory types to retrieve (e.g., ["semantic", "preferences"])
+                         If None, retrieves all available memory types
+            max_results: Maximum number of results to return per memory type
+            
+        Returns:
+            Dictionary with retrieved memories organized by memory type
+        """
+        if not actor_id:
+            raise ValueError("actor_id is required")
+        
+        if not query:
+            raise ValueError("query is required")
+        
+        sanitized_actor_id = self._sanitize_id(actor_id)
+        
+        # Default to semantic and preferences if not specified
+        if memory_types is None:
+            memory_types = ["semantic", "preferences"]
+        
+        results = {}
+        
+        try:
+            for memory_type in memory_types:
+                # Build namespace based on memory type
+                if memory_type == "semantic":
+                    namespace = f"/strategy/semantic/actor/{sanitized_actor_id}"
+                elif memory_type == "preferences":
+                    namespace = f"/strategy/preferences/actor/{sanitized_actor_id}"
+                else:
+                    logger.warning(f"Unknown memory type: {memory_type}, skipping")
+                    continue
+                
+                try:
+                    # Wrap synchronous boto3 call in asyncio.to_thread to avoid blocking
+                    def _retrieve_memory_records():
+                        """Synchronous helper function to call boto3 API."""
+                        return self.client.retrieve_memory_records(
+                            memoryId=self.memory_id,
+                            namespace=namespace,
+                            searchCriteria={
+                                "searchQuery": query,
+                                "topK": max_results,
+                            }
+                        )
+                    
+                    # Run the blocking call in a separate thread
+                    response = await asyncio.to_thread(_retrieve_memory_records)
+                    
+                    # Extract memory records from response
+                    # The response contains 'memoryRecordSummaries' field
+                    items = response.get("memoryRecordSummaries", [])
+                    if not items and "items" in response:
+                        items = response.get("items", [])
+                    results[memory_type] = items
+                    logger.info(
+                        f"Retrieved {len(results[memory_type])} {memory_type} memories "
+                        f"for actor {sanitized_actor_id} with query: {query}"
+                    )
+                except ClientError as e:
+                    error_code = e.response.get("Error", {}).get("Code", "")
+                    # If namespace doesn't exist or no memories found, that's okay
+                    if error_code in ["ResourceNotFoundException", "ValidationException"]:
+                        logger.debug(
+                            f"No {memory_type} memories found for actor {sanitized_actor_id}: {e}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Failed to retrieve {memory_type} memories for actor {sanitized_actor_id}: {e}"
+                        )
+                    results[memory_type] = []
+            
+            return results
+        except Exception as e:
+            raise RuntimeError(f"Failed to retrieve memories from AgentCore Memory: {e}") from e
+
+    async def create_event(
         self,
         actor_id: str,
         session_id: str,
@@ -81,6 +169,7 @@ class AgentCoreMemoryService:
             )
 
         try:
+            # boto3 expects datetime.datetime object, not timestamp
             event_timestamp = datetime.utcnow()
             params = {
                 "memoryId": self.memory_id,
@@ -91,9 +180,20 @@ class AgentCoreMemoryService:
             }
 
             if metadata:
-                params["metadata"] = metadata
+                # Metadata values must be wrapped in MetadataValue format
+                # According to API, MetadataValue is a union with stringValue
+                formatted_metadata = {}
+                for key, value in metadata.items():
+                    formatted_metadata[key] = {"stringValue": str(value)}
+                params["metadata"] = formatted_metadata
 
-            response = self.client.create_event(**params)
+            # Wrap synchronous boto3 call in asyncio.to_thread to avoid blocking
+            def _create_event():
+                """Synchronous helper function to call boto3 API."""
+                return self.client.create_event(**params)
+            
+            # Run the blocking call in a separate thread
+            response = await asyncio.to_thread(_create_event)
             return response
         except ClientError as e:
             raise RuntimeError(f"Failed to create event in AgentCore Memory: {e}") from e
@@ -192,14 +292,26 @@ def get_persist_ltm_node():
 
         try:
             cfg = Configuration.from_environment()
-            AgentCoreMemoryService(cfg).create_event(
+            memory_service = AgentCoreMemoryService(cfg)
+            response = await memory_service.create_event(
                 actor_id=actor_id,
                 session_id=session_id,
                 messages=payload_messages,
                 metadata=metadata,
             )
-        except Exception:
-            # Persistence errors shouldn't break the main flow.
+            logger.info(
+                "Successfully persisted event to AgentCore Memory: eventId=%s",
+                response.get("eventId", "unknown")
+            )
+        except Exception as e:
+            # Persistence errors shouldn't break the main flow, but we should log them
+            logger.error(
+                "Failed to persist event to AgentCore Memory: actor_id=%s session_id=%s error=%s",
+                actor_id,
+                session_id,
+                str(e),
+                exc_info=True
+            )
             return {}
 
         return {}

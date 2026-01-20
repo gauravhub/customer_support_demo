@@ -8,6 +8,7 @@ The agent is created as a subgraph so it appears expandable in LangGraph Studio.
 
 import asyncio
 import logging
+import re
 from langchain.agents import create_agent
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langchain_core.runnables import RunnableConfig
@@ -16,7 +17,7 @@ from typing import Literal
 from agent.state import CustomerSupportState
 from agent.configuration import Configuration
 from agent.middleware import KnowledgeBaseIDMiddleware, StateUpdateMiddleware
-from agent.persist_ltm import get_persist_ltm_node
+from agent.persist_ltm import AgentCoreMemoryService, get_persist_ltm_node
 from agent.prompts import get_customer_support_agent_triage_system_prompt
 from agent.tools import updateIsInConversationModeFlag, updateInitiateIssueAnalysisFlag
 from agent.issue_analysis import (
@@ -36,19 +37,195 @@ logger = logging.getLogger(__name__)
 async def retrieve_context_node(
     state: CustomerSupportState, config: RunnableConfig
 ) -> dict:
-    """Retrieve context node (placeholder).
+    """Retrieve context from AgentCore Memory.
     
-    This node can be used to retrieve context before the customer support agent.
+    This node retrieves semantic facts and user preferences from AgentCore Memory
+    to pre-populate customer information (username and email) when:
+    - actor_id is available in config
+    - isInConversationMode is False (not in an active conversation)
     
     Args:
         state: Current state
-        config: Runtime configuration
+        config: Runtime configuration (should contain actor_id in configurable)
         
     Returns:
-        Empty dict (no state updates)
+        Dictionary with state updates including customer_email and customer_name if found
     """
-    logger.info("retrieve_context_node: Retrieving context")
-    return {}
+    logger.info("retrieve_context_node: Starting context retrieval")
+    
+    # Get actor_id from configurable
+    configurable = config.get("configurable", {}) if config else {}
+    actor_id = configurable.get("actor_id")
+    
+    # Check if we should retrieve context
+    is_in_conversation_mode = state.get("isInConversationMode", False)
+    
+    if not actor_id:
+        logger.info("retrieve_context_node: No actor_id in config, skipping memory retrieval")
+        return {}
+    
+    if is_in_conversation_mode:
+        logger.info("retrieve_context_node: Already in conversation mode, skipping memory retrieval")
+        return {}
+    
+    logger.info(f"retrieve_context_node: Retrieving context for actor_id={actor_id}")
+    
+    try:
+        cfg = Configuration.from_environment()
+        memory_service = AgentCoreMemoryService(cfg)
+        
+        # Query semantic facts and user preferences for username and email
+        queries = [
+            "user's name or username",
+            "user's email address",
+            "customer email",
+            "customer name"
+        ]
+        
+        state_updates = {}
+        found_email = False
+        found_name = False
+        
+        # Try each query to find username and email
+        for query in queries:
+            if found_email and found_name:
+                break
+            
+            try:
+                memories = await memory_service.retrieve_memory(
+                    actor_id=actor_id,
+                    query=query,
+                    memory_types=["semantic", "preferences"],
+                    max_results=5
+                )
+                
+                # Helper function to extract text content from memory item
+                def extract_content(memory_item):
+                    """Extract text content from memory item, handling different structures.
+                    
+                    MemoryRecordSummary structure:
+                    {
+                        "content": { ... },  # Content object (may have text, structured data, etc.)
+                        "memoryRecordId": "...",
+                        "score": ...,
+                        ...
+                    }
+                    """
+                    # Try different possible structures
+                    if isinstance(memory_item, str):
+                        return memory_item.lower()
+                    if isinstance(memory_item, dict):
+                        # Try content object (MemoryRecordSummary structure)
+                        if "content" in memory_item:
+                            content_obj = memory_item["content"]
+                            if isinstance(content_obj, dict):
+                                # Try content.text
+                                if "text" in content_obj:
+                                    return str(content_obj["text"]).lower()
+                                # Try content.value
+                                if "value" in content_obj:
+                                    return str(content_obj["value"]).lower()
+                                # Try content.fact or content.preference (semantic/preferences strategies)
+                                if "fact" in content_obj:
+                                    return str(content_obj["fact"]).lower()
+                                if "preference" in content_obj:
+                                    return str(content_obj["preference"]).lower()
+                                # If content is a simple dict, try to stringify it
+                                if len(content_obj) == 1:
+                                    return str(list(content_obj.values())[0]).lower()
+                            elif isinstance(content_obj, str):
+                                return content_obj.lower()
+                        # Try direct text field
+                        if "text" in memory_item:
+                            return str(memory_item["text"]).lower()
+                        # Try value field
+                        if "value" in memory_item:
+                            return str(memory_item["value"]).lower()
+                        # Try fact or preference fields directly
+                        if "fact" in memory_item:
+                            return str(memory_item["fact"]).lower()
+                        if "preference" in memory_item:
+                            return str(memory_item["preference"]).lower()
+                    return ""
+                
+                # Process semantic memories
+                for memory_item in memories.get("semantic", []):
+                    content = extract_content(memory_item)
+                    if not content:
+                        continue
+                    
+                    # Look for email address
+                    if not found_email and ("@" in content or "email" in content):
+                        # Try to extract email from content
+                        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+                        emails = re.findall(email_pattern, content, re.IGNORECASE)
+                        if emails:
+                            state_updates["customer_email"] = emails[0]
+                            found_email = True
+                            logger.info(f"retrieve_context_node: Found email from semantic memory: {emails[0]}")
+                    
+                    # Look for name/username
+                    if not found_name and ("name" in content or "username" in content):
+                        # Try to extract name - look for patterns like "name is X" or "username is X"
+                        name_patterns = [
+                            r"name is\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+                            r"username is\s+([A-Za-z0-9_]+)",
+                            r"called\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+                            r"user\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+                        ]
+                        for pattern in name_patterns:
+                            matches = re.findall(pattern, content, re.IGNORECASE)
+                            if matches:
+                                state_updates["customer_name"] = matches[0]
+                                found_name = True
+                                logger.info(f"retrieve_context_node: Found name from semantic memory: {matches[0]}")
+                                break
+                
+                # Process user preference memories
+                for memory_item in memories.get("preferences", []):
+                    content = extract_content(memory_item)
+                    if not content:
+                        continue
+                    
+                    # Look for email address
+                    if not found_email and ("@" in content or "email" in content):
+                        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+                        emails = re.findall(email_pattern, content, re.IGNORECASE)
+                        if emails:
+                            state_updates["customer_email"] = emails[0]
+                            found_email = True
+                            logger.info(f"retrieve_context_node: Found email from preferences: {emails[0]}")
+                    
+                    # Look for name/username
+                    if not found_name and ("name" in content or "username" in content):
+                        name_patterns = [
+                            r"name is\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+                            r"username is\s+([A-Za-z0-9_]+)",
+                            r"called\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+                            r"user\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+                        ]
+                        for pattern in name_patterns:
+                            matches = re.findall(pattern, content, re.IGNORECASE)
+                            if matches:
+                                state_updates["customer_name"] = matches[0]
+                                found_name = True
+                                logger.info(f"retrieve_context_node: Found name from preferences: {matches[0]}")
+                                break
+                
+            except Exception as e:
+                logger.warning(f"retrieve_context_node: Error querying memory with query '{query}': {e}")
+                continue
+        
+        if state_updates:
+            logger.info(f"retrieve_context_node: Retrieved context: {list(state_updates.keys())}")
+        else:
+            logger.info("retrieve_context_node: No customer information found in memory")
+        
+        return state_updates
+        
+    except Exception as e:
+        logger.error(f"retrieve_context_node: Error retrieving context from AgentCore Memory: {e}", exc_info=True)
+        return {}
 
 
 def create_issue_analysis_subgraph():
