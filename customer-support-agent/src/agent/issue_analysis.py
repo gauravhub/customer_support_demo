@@ -738,6 +738,39 @@ async def update_response_node(
                     state_updates[field] = new_value
                     logger.info(f"update_response_node: Including state update: {field} = {new_value}")
         
+        # CRITICAL FIX: If response was generated and stored in state but not in messages,
+        # create an AIMessage with the response content so it appears in the UI
+        response_content = state_updates.get("response") or result.get("response")
+        if response_content:
+            # Check if the last message in new_messages is an AIMessage with the response content
+            messages_to_add = list(state_updates.get("messages", []))
+            last_message = messages_to_add[-1] if messages_to_add else None
+            
+            # Check if we need to add the response as an AIMessage
+            needs_response_message = True
+            if last_message and isinstance(last_message, AIMessage):
+                # Check if the last AIMessage already contains the response content
+                last_content = str(last_message.content) if hasattr(last_message, 'content') else ""
+                # If the last message content matches the response (or contains it), we don't need to add it
+                if last_content.strip() and response_content.strip() in last_content.strip():
+                    needs_response_message = False
+                    logger.info("update_response_node: Last AIMessage already contains response content")
+                # Also check if it's empty or just "Empty message"
+                elif not last_content.strip() or last_content.strip().lower() == "empty message":
+                    needs_response_message = True
+                    logger.info("update_response_node: Last AIMessage is empty, will add response content")
+                else:
+                    # Last message has some content but it's not the response - add the response anyway
+                    needs_response_message = True
+                    logger.info(f"update_response_node: Last AIMessage has different content, will add response")
+            
+            if needs_response_message:
+                # Create an AIMessage with the response content
+                response_message = AIMessage(content=response_content)
+                messages_to_add.append(response_message)
+                state_updates["messages"] = messages_to_add
+                logger.info(f"update_response_node: Added AIMessage with response content (length: {len(response_content)} chars)")
+        
         logger.info(f"update_response_node: Returning state updates with keys: {list(state_updates.keys())}")
         return state_updates
     except Exception as e:

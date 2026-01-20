@@ -314,7 +314,9 @@ class StateUpdateMiddleware(AgentMiddleware[CustomerSupportState]):
                 if "email" in tool_result:
                     state_updates["customer_email"] = tool_result["email"]
                 if "name" in tool_result:
-                    state_updates["customer_name"] = tool_result["name"]
+                    # Capitalize the name properly (e.g., "morgan taylor" -> "Morgan Taylor")
+                    name = tool_result["name"]
+                    state_updates["customer_name"] = name.title() if name else name
                 logger.info(
                     f"StateUpdateMiddleware: Built state updates for {tool_name}: "
                     f"{list(state_updates.keys())} = {state_updates}"
