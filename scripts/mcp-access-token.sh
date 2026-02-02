@@ -1,0 +1,1 @@
+curl --http1.1 -X POST https://customer-support-mcp-gateway.auth.us-west-2.amazoncognito.com/oauth2/token -H "Content-Type: application/x-www-form-urlencoded"   -d "grant_type=client_credentials&client_id=512e733q95u0nl3ctuoauj5f3f&client_secret=real57kkkcdhe4dsjduqjatg4kujoedoajg41tgi1s0g8ib61nu"
