@@ -17,6 +17,18 @@ An AI-powered customer support system with REST APIs, Knowledge Base, and MCP Ga
   - `/order-management/*` → Order Management API
   - `/issue-management/*` → Issue Management API
 
+![AWS Architecture - Customer Support Agent](assets/architecture-diagram.png)
+
+*High-level AWS architecture: Users → Customer Support Agent (LangChain/LangGraph) → Amazon Bedrock (LLMs), AgentCore Memory (LTM), AgentCore Gateway (MCP tools), AgentCore Identity (Cognito). Observability via LangSmith.*
+
+### Agent Workflow
+
+The Customer Support Agent runs a LangGraph workflow: context retrieval, agent (model + tools), optional issue analysis, then context persistence.
+
+![Customer Support Agent Workflow](assets/workflow-diagram.png)
+
+*Workflow: Retrieve Context → Customer Support Agent (model ↔ tools) → [Issue Analysis: Analyze Summary → Analyze Attachments → Determine Category → Assign Support Contact → Generate Response] → Persist Context → End.*
+
 ## Quick Start
 
 ### Prerequisites
